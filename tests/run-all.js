@@ -11,6 +11,7 @@ const tests = [
   'loss-report.test.js',
   'integration.test.js',
   'platform-syncer.test.js',
+  'payload-runner.test.js',
 ];
 
 const testsDir = __dirname;
