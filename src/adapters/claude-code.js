@@ -70,8 +70,6 @@ function emit(ir) {
     ...(ir.meta.author && { author: { name: ir.meta.author } }),
     ...(ir.meta.homepage && { homepage: ir.meta.homepage }),
     ...(ir.meta.repository && { repository: ir.meta.repository }),
-    license: 'MIT',
-    keywords: ['skills', 'tdd', 'debugging', 'code-review', 'workflows', 'agentic', 'token-efficiency', 'hooks', 'safety', 'subagent'],
   };
 
   result.files.set('.claude-plugin/plugin.json', compactShortArrays(JSON.stringify(manifest, null, 2)) + '\n');

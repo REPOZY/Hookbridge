@@ -153,13 +153,11 @@ function emit(ir) {
     ...(ir.meta.author && { author: { name: ir.meta.author } }),
     ...(ir.meta.homepage && { homepage: ir.meta.homepage }),
     ...(ir.meta.repository && { repository: ir.meta.repository }),
-    license: 'MIT',
-    keywords: ['skills', 'tdd', 'debugging', 'code-review', 'workflows', 'agentic', 'token-efficiency', 'hooks', 'safety', 'subagent'],
     skills: './skills/',
     hooks: './hooks/codex-hooks.json',
     interface: {
-      displayName: 'Superpowers Optimized',
-      shortDescription: '30+ expert workflow skills — debugging, TDD, code review, brainstorming, and more',
+      displayName: ir.meta.name,
+      shortDescription: ext.description || ir.meta.description,
     },
   };
 
