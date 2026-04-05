@@ -22,7 +22,7 @@ hooks/
 
 These files get out of sync. A change in one is forgotten in the other. And if a feature exists in Claude Code but not in Codex, there's no guidance on what to do.
 
-**With Hookbridge**, you write one source file:
+**With hookbridge**, you write one source file:
 
 ```yaml
 # plugin.universal.yaml — you only touch this file
@@ -35,7 +35,7 @@ hooks:
 Then run one command:
 
 ```bash
-node Hookbridge.js compile --schema plugin.universal.yaml --out .
+node hookbridge.js compile --schema plugin.universal.yaml --out .
 ```
 
 Hookbridge generates both platform files automatically — correctly formatted, correctly structured, never out of sync. If a feature you're using doesn't exist on one of the platforms, it tells you exactly what it shimmed (approximated) and what it couldn't support at all.
@@ -62,13 +62,13 @@ Open `my-plugin.yaml` and fill in your plugin's details (name, author, hooks).
 **Step 2 — Check your schema is valid:**
 
 ```bash
-node Hookbridge.js validate --schema my-plugin.yaml
+node hookbridge.js validate --schema my-plugin.yaml
 ```
 
 **Step 3 — Compile to your plugin's root directory:**
 
 ```bash
-node Hookbridge.js compile --schema my-plugin.yaml --out /path/to/your/plugin
+node hookbridge.js compile --schema my-plugin.yaml --out /path/to/your/plugin
 ```
 
 This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), and the plugin manifests for both platforms. It also writes `loss-report.md` — more on that below.
@@ -76,7 +76,7 @@ This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), 
 **Step 4 — Check for drift after any manual edits:**
 
 ```bash
-node Hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
+node hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
 ```
 
 ---
