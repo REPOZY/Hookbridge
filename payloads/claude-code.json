@@ -1,0 +1,281 @@
+{
+  "SessionStart": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "SessionStart"
+    }
+  },
+  "SessionEnd": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "SessionEnd",
+      "exit_code": 0
+    }
+  },
+  "InstructionsLoaded": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "InstructionsLoaded",
+      "instructions": "You are a helpful assistant."
+    }
+  },
+  "PreToolUse": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "__tool_name__",
+      "tool_input": { "command": "ls -la" }
+    }
+  },
+  "PostToolUse": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "__tool_name__",
+      "tool_input": { "command": "ls -la" },
+      "tool_response": "file1.txt\nfile2.txt"
+    }
+  },
+  "PostToolUseFailure": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "__tool_name__",
+      "tool_input": { "command": "ls -la" },
+      "error": "Command failed with exit code 1"
+    }
+  },
+  "PermissionRequest": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PermissionRequest",
+      "tool_name": "__tool_name__",
+      "action": "execute",
+      "resource": "rm -rf /tmp/test"
+    }
+  },
+  "PermissionDenied": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PermissionDenied",
+      "tool_name": "__tool_name__",
+      "action": "execute",
+      "reason": "User denied permission"
+    }
+  },
+  "UserPromptSubmit": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "UserPromptSubmit",
+      "prompt": "What files are in this directory?"
+    }
+  },
+  "SubagentStart": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "SubagentStart",
+      "subagent_id": "subagent_abc123"
+    }
+  },
+  "SubagentStop": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "SubagentStop",
+      "subagent_id": "subagent_abc123",
+      "exit_code": 0
+    }
+  },
+  "TeammateIdle": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "TeammateIdle",
+      "teammate_id": "teammate_xyz"
+    }
+  },
+  "TaskCreated": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "TaskCreated",
+      "task_id": "task_001",
+      "title": "Example task"
+    }
+  },
+  "TaskCompleted": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "TaskCompleted",
+      "task_id": "task_001",
+      "title": "Example task"
+    }
+  },
+  "Stop": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "Stop",
+      "stop_hook_active": true
+    }
+  },
+  "StopFailure": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "StopFailure",
+      "error": "Hook timed out"
+    }
+  },
+  "FileChanged": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "FileChanged",
+      "file": "__cwd__/src/example.js"
+    }
+  },
+  "CwdChanged": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "CwdChanged",
+      "old_cwd": "__cwd__",
+      "new_cwd": "__cwd__/subdir"
+    }
+  },
+  "ConfigChange": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "ConfigChange",
+      "key": "model",
+      "old_value": "claude-sonnet-4-6",
+      "new_value": "claude-opus-4-6"
+    }
+  },
+  "WorktreeCreate": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "WorktreeCreate",
+      "worktree_path": "__cwd__/.worktrees/feature-branch",
+      "branch": "feature-branch"
+    }
+  },
+  "WorktreeRemove": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "WorktreeRemove",
+      "worktree_path": "__cwd__/.worktrees/feature-branch"
+    }
+  },
+  "Notification": {
+    "coverage": "verified",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "Notification",
+      "message": "Claude needs your input to continue.",
+      "title": "Claude Code"
+    }
+  },
+  "PreCompact": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PreCompact",
+      "context_tokens": 180000
+    }
+  },
+  "PostCompact": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PostCompact",
+      "tokens_before": 180000,
+      "tokens_after": 45000
+    }
+  },
+  "Elicitation": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "Elicitation",
+      "elicitation_id": "elicit_001",
+      "prompt": "Please provide your API key."
+    }
+  },
+  "ElicitationResult": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "transcript_path": "__transcript_path__",
+      "cwd": "__cwd__",
+      "hook_event_name": "ElicitationResult",
+      "elicitation_id": "elicit_001",
+      "result": "sk-example-key"
+    }
+  }
+}

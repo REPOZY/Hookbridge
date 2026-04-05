@@ -1,0 +1,48 @@
+{
+  "SessionStart": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "cwd": "__cwd__",
+      "hook_event_name": "SessionStart"
+    }
+  },
+  "PreToolUse": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "__tool_name__",
+      "tool_input": { "command": "ls -la" }
+    }
+  },
+  "PostToolUse": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "cwd": "__cwd__",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "__tool_name__",
+      "tool_input": { "command": "ls -la" },
+      "tool_output": "file1.txt\nfile2.txt"
+    }
+  },
+  "UserPromptSubmit": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "cwd": "__cwd__",
+      "hook_event_name": "UserPromptSubmit",
+      "prompt": "What files are in this directory?"
+    }
+  },
+  "Stop": {
+    "coverage": "inferred",
+    "payload": {
+      "session_id": "__session_id__",
+      "cwd": "__cwd__",
+      "hook_event_name": "Stop"
+    }
+  }
+}
