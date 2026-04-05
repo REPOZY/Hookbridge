@@ -9,6 +9,9 @@ const { getAdapter } = require('./src/adapter-registry');
 const { generateReport } = require('./src/loss-reporter');
 const { diff } = require('./src/differ');
 const { syncPlatform } = require('./src/platform-syncer');
+const { spawnSync } = require('child_process');
+const { generatePayload } = require('./src/payload-runner');
+const { VALID_EVENTS } = require('./src/ir');
 
 const VERSION = '0.1.0';
 
@@ -22,6 +25,7 @@ Commands:
   validate   Parse and validate schema only
   diff       Compare compiled output against files on disk
   sync       Check platform docs for new or removed hook events
+  run        Simulate an event and fire matching hook scripts locally
   help       Show this help
 
 Options:
@@ -29,11 +33,16 @@ Options:
   --out <dir>       Output root directory (default: .)
   --dry-run         Print what would be written without touching disk
   --platform <id>   Limit sync to one platform (e.g. codex)
+  --event <name>    Event to simulate (e.g. SessionStart, PreToolUse)
+  --tool <name>     Tool name for tool events (default: Bash)
+  --merge <json>    JSON merged into the payload (overrides generated values)
+  --script <path>   Run a specific script directly, bypassing schema lookup
+  --cwd <path>      Working directory in the payload (default: process.cwd())
 `);
 }
 
 function parseArgs(argv) {
-  const args = { command: null, schema: 'plugin.universal.yaml', out: '.', dryRun: false, platform: null };
+  const args = { command: null, schema: 'plugin.universal.yaml', out: '.', dryRun: false, platform: null, event: null, tool: 'Bash', merge: null, script: null, cwd: null };
   let i = 2; // skip node and script path
   if (argv[i] && !argv[i].startsWith('-')) {
     args.command = argv[i++];
@@ -43,6 +52,11 @@ function parseArgs(argv) {
     else if (argv[i] === '--out' && argv[i + 1]) { args.out = argv[++i]; }
     else if (argv[i] === '--dry-run') { args.dryRun = true; }
     else if (argv[i] === '--platform' && argv[i + 1]) { args.platform = argv[++i]; }
+    else if (argv[i] === '--event' && argv[i + 1]) { args.event = argv[++i]; }
+    else if (argv[i] === '--tool' && argv[i + 1]) { args.tool = argv[++i]; }
+    else if (argv[i] === '--merge' && argv[i + 1]) { args.merge = argv[++i]; }
+    else if (argv[i] === '--script' && argv[i + 1]) { args.script = argv[++i]; }
+    else if (argv[i] === '--cwd' && argv[i + 1]) { args.cwd = argv[++i]; }
     i++;
   }
   return args;
@@ -345,6 +359,140 @@ async function runSync(args) {
   process.exit(hasIssues ? 1 : 0);
 }
 
+function runRun(args) {
+  const platformId = args.platform || 'claude-code';
+
+  // Validate --event
+  if (!args.event) {
+    console.error('Error: run requires --event (e.g. --event SessionStart)');
+    process.exit(2);
+  }
+  if (!VALID_EVENTS.includes(args.event)) {
+    console.error(`Error: unknown event "${args.event}"\nValid events: ${VALID_EVENTS.join(', ')}`);
+    process.exit(2);
+  }
+
+  // Load payload schemas
+  const payloadsDir = path.join(__dirname, 'payloads');
+  const payloadFile = path.join(payloadsDir, `${platformId}.json`);
+  if (!fs.existsSync(payloadFile)) {
+    console.error(`Error: no payload schema file found for platform "${platformId}" — run is not yet supported for this platform`);
+    process.exit(2);
+  }
+  const payloadSchemas = JSON.parse(fs.readFileSync(payloadFile, 'utf8'));
+
+  // Load platform spec for env vars
+  const platformSpecFile = path.join(__dirname, 'platforms', `${platformId}.json`);
+  const platformSpec = fs.existsSync(platformSpecFile)
+    ? JSON.parse(fs.readFileSync(platformSpecFile, 'utf8'))
+    : {};
+  const platformEnvVars = platformSpec.env || {};
+
+  // Parse --merge
+  let merge = null;
+  if (args.merge) {
+    try {
+      merge = JSON.parse(args.merge);
+    } catch (e) {
+      console.error(`Error: invalid JSON in --merge: ${e.message}`);
+      process.exit(2);
+    }
+  }
+
+  const resolvedCwd = path.resolve(args.cwd || process.cwd());
+
+  const overrides = {
+    cwd: resolvedCwd,
+    toolName: args.tool || 'Bash',
+    merge,
+  };
+
+  // Generate payload
+  const { payload, warnings } = generatePayload(args.event, payloadSchemas, overrides);
+
+  console.log(`\nhookbridge run — ${args.event} on ${platformId}\n`);
+
+  for (const w of warnings) {
+    console.warn(`  ⚠  ${w}`);
+  }
+  if (warnings.length > 0) console.log('');
+
+  console.log('  payload:');
+  const payloadLines = JSON.stringify(payload, null, 2).split('\n');
+  for (const line of payloadLines) console.log('  ' + line);
+  console.log('');
+
+  // Determine which commands to run
+  const commands = [];
+
+  if (args.script) {
+    const scriptPath = path.resolve(args.script);
+    if (!fs.existsSync(scriptPath)) {
+      console.error(`Error: script not found: ${scriptPath}`);
+      process.exit(2);
+    }
+    commands.push(`node "${scriptPath}"`);
+  } else {
+    // Schema-centric: parse schema and find matching hooks
+    const schemaPath = path.resolve(args.schema);
+    if (!fs.existsSync(schemaPath)) {
+      console.error(`Error: schema file not found: ${schemaPath}`);
+      process.exit(2);
+    }
+    const yamlContent = fs.readFileSync(schemaPath, 'utf8');
+    const { ir, errors } = parse(yamlContent);
+    if (errors.length > 0) {
+      console.error('Schema invalid — cannot run.\n');
+      for (const e of errors) console.error(`  ${e}`);
+      process.exit(2);
+    }
+
+    const pluginRoot = path.resolve(args.out);
+    const matchingHooks = ir.hooks.filter(
+      h => h.event === args.event &&
+           h.platforms.includes(platformId) &&
+           (h.type || 'command') === 'command'
+    );
+
+    if (matchingHooks.length === 0) {
+      console.log(`  No hooks for ${args.event} on ${platformId} — nothing to run.`);
+      process.exit(0);
+    }
+
+    for (const hook of matchingHooks) {
+      const cmd = hook.command.replace(/\{PLUGIN_ROOT\}/g, pluginRoot);
+      commands.push(cmd);
+    }
+  }
+
+  // Run each command synchronously
+  const payloadJson = JSON.stringify(payload);
+  let anyFailed = false;
+
+  for (const cmd of commands) {
+    console.log(`  ▶  ${cmd}`);
+    const result = spawnSync(cmd, {
+      shell: true,
+      input: payloadJson,
+      stdio: ['pipe', 'inherit', 'inherit'],
+      env: { ...process.env, ...platformEnvVars },
+    });
+
+    if (result.error) {
+      console.error(`  ✗  spawn error: ${result.error.message}`);
+      anyFailed = true;
+    } else if (result.status !== 0) {
+      console.log(`  ✗  exit ${result.status}`);
+      anyFailed = true;
+    } else {
+      console.log(`  ✓  exit 0`);
+    }
+    console.log('');
+  }
+
+  if (anyFailed) process.exit(1);
+}
+
 // Main
 const args = parseArgs(process.argv);
 
@@ -358,6 +506,7 @@ switch (args.command) {
       process.exit(1);
     });
     break;
+  case 'run': runRun(args); break;
   case 'help': printHelp(); break;
   default:
     printHelp();
