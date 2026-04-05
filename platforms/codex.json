@@ -1,0 +1,10 @@
+{
+  "id": "codex",
+  "docUrls": ["https://developers.openai.com/codex/hooks"],
+  "knownEvents": [
+    "SessionStart", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Stop"
+  ],
+  "knownHookTypes": ["command"],
+  "lastChecked": "2026-04-05",
+  "pageHashes": {}
+}

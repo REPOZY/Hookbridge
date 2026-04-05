@@ -1,0 +1,18 @@
+{
+  "id": "claude-code",
+  "docUrls": ["https://code.claude.com/docs/en/hooks"],
+  "knownEvents": [
+    "SessionStart", "SessionEnd", "InstructionsLoaded",
+    "PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest", "PermissionDenied",
+    "UserPromptSubmit",
+    "SubagentStart", "SubagentStop", "TeammateIdle", "TaskCreated", "TaskCompleted",
+    "Stop", "StopFailure",
+    "FileChanged", "CwdChanged", "ConfigChange",
+    "WorktreeCreate", "WorktreeRemove",
+    "Notification", "PreCompact", "PostCompact",
+    "Elicitation", "ElicitationResult"
+  ],
+  "knownHookTypes": ["command", "http", "prompt", "agent"],
+  "lastChecked": "2026-04-05",
+  "pageHashes": {}
+}
