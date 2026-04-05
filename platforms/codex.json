@@ -16,5 +16,6 @@
   "lastChecked": "2026-04-05",
   "pageHashes": {
     "https://developers.openai.com/codex/hooks": "c76e7bdfeea5db2f9f7059055d0665ae48115b078282faebfff0830bc65dc23f"
-  }
+  },
+  "env": {}
 }

@@ -40,5 +40,6 @@
   "lastChecked": "2026-04-05",
   "pageHashes": {
     "https://code.claude.com/docs/en/hooks": "de322c7dda43e3f4c21ebe7c1cfb97837088996db64f5822da783416986547c9"
-  }
+  },
+  "env": {}
 }
