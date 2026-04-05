@@ -1,0 +1,77 @@
+# example/plugin.universal.yaml — minimal hookbridge example
+# Compile with: node hookbridge.js compile --schema example/plugin.universal.yaml --out ./output
+
+meta:
+  name: my-plugin
+  version: "1.0.0"
+  description: "My plugin for Claude Code and Codex"
+  author: "Your Name"
+  homepage: "https://github.com/yourname/my-plugin"
+  repository: "https://github.com/yourname/my-plugin"
+  platforms: [claude-code, codex]
+
+hooks:
+  # Run on session start (both platforms)
+  - event: SessionStart
+    command: "node {PLUGIN_ROOT}/hooks/session-start.js"
+    platforms: [claude-code, codex]
+
+  # Run when user submits a prompt (both platforms)
+  - event: UserPromptSubmit
+    command: "node {PLUGIN_ROOT}/hooks/on-prompt.js"
+    platforms: [claude-code, codex]
+
+  # Track file edits — Claude Code native, Codex: shimmed via transcript analysis
+  - event: PostToolUse
+    matcher: "Edit|Write"
+    command: "node {PLUGIN_ROOT}/hooks/track-edits.js"
+    platforms: [claude-code]
+
+  # Run on session stop (both platforms)
+  - event: Stop
+    command: "node {PLUGIN_ROOT}/hooks/on-stop.js"
+    platforms: [claude-code, codex]
+
+  # --- New Claude Code events (v2) ---
+
+  # Re-inject context after compaction (Claude Code only — Codex: hard-limit)
+  - event: PostCompact
+    command: "node {PLUGIN_ROOT}/hooks/reinject-context.js"
+    platforms: [claude-code]
+
+  # Desktop notification when Claude needs input (Claude Code only — Codex: hard-limit)
+  - event: Notification
+    command: "node {PLUGIN_ROOT}/hooks/desktop-notify.js"
+    platforms: [claude-code]
+
+  # Audit config changes (Claude Code only — Codex: hard-limit)
+  - event: ConfigChange
+    command: "node {PLUGIN_ROOT}/hooks/audit-config.js"
+    platforms: [claude-code]
+
+  # --- New hook types (Claude Code only) ---
+
+  # HTTP hook — POST event data to an audit endpoint (Claude Code only — Codex: hard-limit)
+  - event: PostToolUse
+    type: http
+    url: "https://audit.example.com/tool-use"
+    platforms: [claude-code]
+
+  # Prompt hook — LLM evaluates whether all tasks are done (Claude Code only — Codex: hard-limit)
+  - event: Stop
+    type: prompt
+    prompt: "Check if all tasks the user requested are complete. Return {\"ok\": true} if done, or {\"ok\": false, \"reason\": \"what remains\"} if not."
+    platforms: [claude-code]
+
+skills:
+  - path: skills/
+    recursive: true
+
+extensions:
+  claude-code:
+    env_var: MY_PLUGIN_ROOT
+    description: "My plugin for Claude Code"
+
+  codex:
+    install_path: "$HOME/.codex/{meta.name}"
+    description: "My plugin for Codex"
