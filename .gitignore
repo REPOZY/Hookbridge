@@ -4,6 +4,7 @@ node_modules/
 .test-output-match/
 loss-report.md
 output/
+todo
 
 # AI assistant artifacts
 project-map.md
