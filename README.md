@@ -79,6 +79,14 @@ This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), 
 node hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
 ```
 
+**Step 5 — Test your hooks locally without a live session:**
+
+```bash
+node hookbridge.js run --event SessionStart --schema my-plugin.yaml
+```
+
+This fires every hook that matches `SessionStart` with a realistic mock payload — no Claude Code or Codex session needed. See the [run command](#the-run-command) section below.
+
 ---
 
 ## The source file: plugin.universal.yaml
@@ -105,6 +113,11 @@ hooks:
     command: "node {PLUGIN_ROOT}/hooks/track-edits.js"
     platforms: [claude-code]        # Claude Code only — Codex can't do this natively
 
+  - event: PostToolUse              # Claude Code also supports http, prompt, agent types
+    type: http
+    url: "https://audit.example.com/tool-use"
+    platforms: [claude-code]
+
 skills:
   - path: skills/
     recursive: true
@@ -119,6 +132,17 @@ extensions:
     description: "Codex description"
 ```
 
+### Hook types
+
+The `type` field controls how Claude Code dispatches the hook. Codex supports `command` only; other types produce a hard-limit loss on Codex.
+
+| Type | Required field | Behavior |
+|---|---|---|
+| `command` (default) | `command` | Runs a shell command; payload delivered via stdin |
+| `http` | `url` | POST request to the URL with payload as JSON body |
+| `prompt` | `prompt` | Sends a prompt to Claude; supports optional `model` field |
+| `agent` | `prompt` | Runs an agent with the prompt; supports optional `model` field |
+
 ### `{PLUGIN_ROOT}` — the universal path placeholder
 
 Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. Hookbridge replaces it with the correct platform-specific path resolution:
@@ -128,6 +152,8 @@ Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. Hookbridg
 
 ### Supported hook events
 
+Claude Code supports 26 events. Codex supports 5. The table below shows the events both platforms share; the remaining Claude Code-only events are listed afterward.
+
 | Event | Claude Code | Codex |
 |---|---|---|
 | `SessionStart` | ✅ Native | ✅ Native |
@@ -135,7 +161,94 @@ Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. Hookbridg
 | `PreToolUse` | ✅ Native | ✅ Native (Bash only) |
 | `PostToolUse` | ✅ Native | ⚠️ Native (Bash only) — Edit/Write shimmed |
 | `Stop` | ✅ Native | ✅ Native |
-| `SubagentStop` | ✅ Native | 🔧 Shimmed |
+
+**Claude Code-only events** (all produce a hard-limit loss on Codex):
+
+`SessionEnd` · `InstructionsLoaded` · `PostToolUseFailure` · `PermissionRequest` · `PermissionDenied` · `SubagentStart` · `SubagentStop` · `TeammateIdle` · `TaskCreated` · `TaskCompleted` · `StopFailure` · `FileChanged` · `CwdChanged` · `ConfigChange` · `WorktreeCreate` · `WorktreeRemove` · `Notification` · `PreCompact` · `PostCompact` · `Elicitation` · `ElicitationResult`
+
+`SubagentStop` and `SubagentStart` are shimmed on Codex via stop-time transcript analysis (fires at session end, not in real time).
+
+---
+
+## The sync command
+
+Platform docs change. New hook events get added, old ones get removed. Running `sync` checks the live documentation for each platform and tells you what's changed:
+
+```bash
+node hookbridge.js sync
+```
+
+```
+hookbridge sync — checking 2 platform(s)
+
+  claude-code... ✓
+  codex... ✓
+
+Report: ./platform-sync-report.md
+```
+
+If new events are detected, the report lists them and tells you exactly what to update (`src/ir.js` VALID_EVENTS and the relevant adapter). The command exits 1 if any changes are found — useful in CI.
+
+```bash
+node hookbridge.js sync --platform claude-code   # Check one platform only
+```
+
+---
+
+## The run command
+
+Test your hook scripts locally without starting a real Claude Code or Codex session:
+
+```bash
+node hookbridge.js run --event SessionStart
+```
+
+Hookbridge generates a realistic mock payload and fires every hook in your schema that matches the event, passing the payload via stdin — exactly how the real platform does it.
+
+```
+hookbridge run — SessionStart on claude-code
+
+  payload:
+  {
+    "session_id": "sess_a3f8c21d9b04",
+    "transcript_path": "/Users/you/project/.claude/transcript.jsonl",
+    "cwd": "/Users/you/project",
+    "hook_event_name": "SessionStart"
+  }
+
+  ▶  node /Users/you/project/hooks/session-start.js
+  [script stdout appears here]
+  ✓  exit 0
+```
+
+**Options:**
+
+```bash
+--event <name>    Event to simulate (required)
+--platform <id>   Platform to simulate (default: claude-code)
+--tool <name>     Tool name for PreToolUse/PostToolUse payloads (default: Bash)
+--cwd <path>      Working directory in the payload (default: process.cwd())
+--merge <json>    JSON object merged into the payload (overrides generated values)
+--script <path>   Run a specific script directly, bypassing schema lookup
+```
+
+**Examples:**
+
+```bash
+# Fire all SessionStart hooks in your schema
+node hookbridge.js run --event SessionStart --schema my-plugin.yaml
+
+# Simulate a PostToolUse with a specific tool
+node hookbridge.js run --event PostToolUse --tool Edit
+
+# Override specific payload fields
+node hookbridge.js run --event UserPromptSubmit --merge '{"prompt":"hello"}'
+
+# Test a specific script directly (no schema needed)
+node hookbridge.js run --event SessionStart --script hooks/session-start.js
+```
+
+> **Note on payload accuracy:** The 6 core events (`SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `Notification`) use verified payload shapes from the official docs. The remaining 20 events use inferred shapes — Hookbridge will print a visible warning before running, reminding you to verify the fields against a live session.
 
 ---
 
@@ -204,6 +317,10 @@ hooks.json  codex-hooks.json
 ```
 
 The key design decision: **adapters never see the raw YAML**. They only see the normalized IR. This means adding a new platform never requires understanding what another platform does — each adapter is fully independent.
+
+The `sync` command reads `platforms/<id>.json` spec files to know what events are expected, fetches live doc pages, and compares them — no adapter code involved.
+
+The `run` command reads `payloads/<id>.json` for mock payload templates, resolves dynamic fields (session IDs, paths, timestamps), then spawns your hook scripts with the payload on stdin. It never calls the adapters — it works directly from the schema's IR.
 
 ---
 
