@@ -248,7 +248,9 @@ node hookbridge.js run --event UserPromptSubmit --merge '{"prompt":"hello"}'
 node hookbridge.js run --event SessionStart --script hooks/session-start.js
 ```
 
-> **Note on payload accuracy:** The 6 core events (`SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `Notification`) use verified payload shapes from the official docs. The remaining 20 events use inferred shapes — Hookbridge will print a visible warning before running, reminding you to verify the fields against a live session.
+> **Note on payload accuracy:**
+> - **Claude Code:** 6 events (`SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `Notification`) are verified from official docs. The remaining 20 are inferred — Hookbridge will print a visible warning before running.
+> - **Codex:** All 5 events are verified directly from the [Codex CLI source code](https://github.com/openai/codex) (open source). Codex payloads include additional fields not present in Claude Code: `model`, `permission_mode`, `turn_id` (tool events), `tool_use_id` (tool events), and `source` (SessionStart).
 
 ---
 

@@ -1,48 +1,69 @@
 {
   "SessionStart": {
-    "coverage": "inferred",
+    "coverage": "verified",
     "payload": {
       "session_id": "__session_id__",
       "cwd": "__cwd__",
-      "hook_event_name": "SessionStart"
+      "hook_event_name": "SessionStart",
+      "model": "o4-mini",
+      "permission_mode": "default",
+      "source": "startup",
+      "transcript_path": "__transcript_path__"
     }
   },
   "PreToolUse": {
-    "coverage": "inferred",
+    "coverage": "verified",
     "payload": {
       "session_id": "__session_id__",
+      "turn_id": "turn_001",
       "cwd": "__cwd__",
       "hook_event_name": "PreToolUse",
+      "model": "o4-mini",
+      "permission_mode": "default",
       "tool_name": "__tool_name__",
-      "tool_input": { "command": "ls -la" }
+      "tool_use_id": "call_abc123",
+      "tool_input": { "command": "ls -la" },
+      "transcript_path": "__transcript_path__"
     }
   },
   "PostToolUse": {
-    "coverage": "inferred",
+    "coverage": "verified",
     "payload": {
       "session_id": "__session_id__",
+      "turn_id": "turn_001",
       "cwd": "__cwd__",
       "hook_event_name": "PostToolUse",
+      "model": "o4-mini",
+      "permission_mode": "default",
       "tool_name": "__tool_name__",
+      "tool_use_id": "call_abc123",
       "tool_input": { "command": "ls -la" },
-      "tool_output": "file1.txt\nfile2.txt"
+      "tool_response": "file1.txt\nfile2.txt",
+      "transcript_path": "__transcript_path__"
     }
   },
   "UserPromptSubmit": {
-    "coverage": "inferred",
+    "coverage": "verified",
     "payload": {
       "session_id": "__session_id__",
+      "turn_id": "turn_001",
       "cwd": "__cwd__",
       "hook_event_name": "UserPromptSubmit",
-      "prompt": "What files are in this directory?"
+      "model": "o4-mini",
+      "permission_mode": "default",
+      "prompt": "What files are in this directory?",
+      "transcript_path": "__transcript_path__"
     }
   },
   "Stop": {
-    "coverage": "inferred",
+    "coverage": "verified",
     "payload": {
       "session_id": "__session_id__",
       "cwd": "__cwd__",
-      "hook_event_name": "Stop"
+      "hook_event_name": "Stop",
+      "model": "o4-mini",
+      "permission_mode": "default",
+      "transcript_path": "__transcript_path__"
     }
   }
 }
