@@ -1,18 +1,44 @@
 {
   "id": "claude-code",
-  "docUrls": ["https://code.claude.com/docs/en/hooks"],
-  "knownEvents": [
-    "SessionStart", "SessionEnd", "InstructionsLoaded",
-    "PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest", "PermissionDenied",
-    "UserPromptSubmit",
-    "SubagentStart", "SubagentStop", "TeammateIdle", "TaskCreated", "TaskCompleted",
-    "Stop", "StopFailure",
-    "FileChanged", "CwdChanged", "ConfigChange",
-    "WorktreeCreate", "WorktreeRemove",
-    "Notification", "PreCompact", "PostCompact",
-    "Elicitation", "ElicitationResult"
+  "docUrls": [
+    "https://code.claude.com/docs/en/hooks"
   ],
-  "knownHookTypes": ["command", "http", "prompt", "agent"],
+  "knownEvents": [
+    "SessionStart",
+    "SessionEnd",
+    "InstructionsLoaded",
+    "PreToolUse",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "PermissionRequest",
+    "PermissionDenied",
+    "UserPromptSubmit",
+    "SubagentStart",
+    "SubagentStop",
+    "TeammateIdle",
+    "TaskCreated",
+    "TaskCompleted",
+    "Stop",
+    "StopFailure",
+    "FileChanged",
+    "CwdChanged",
+    "ConfigChange",
+    "WorktreeCreate",
+    "WorktreeRemove",
+    "Notification",
+    "PreCompact",
+    "PostCompact",
+    "Elicitation",
+    "ElicitationResult"
+  ],
+  "knownHookTypes": [
+    "command",
+    "http",
+    "prompt",
+    "agent"
+  ],
   "lastChecked": "2026-04-05",
-  "pageHashes": {}
+  "pageHashes": {
+    "https://code.claude.com/docs/en/hooks": "de322c7dda43e3f4c21ebe7c1cfb97837088996db64f5822da783416986547c9"
+  }
 }

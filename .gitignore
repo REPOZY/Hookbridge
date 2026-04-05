@@ -1,0 +1,11 @@
+node_modules/
+.test-output/
+.test-output-dry/
+.test-output-match/
+loss-report.md
+output/
+
+# AI assistant artifacts
+project-map.md
+session-log.md
+state.md

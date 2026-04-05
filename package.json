@@ -1,0 +1,17 @@
+{
+  "name": "hookbridge",
+  "version": "0.1.0",
+  "description": "Universal plugin compiler — write once in plugin.universal.yaml, emit native hook files for Claude Code, Codex, and more",
+  "bin": {
+    "hookbridge": "./hookbridge.js"
+  },
+  "main": "hookbridge.js",
+  "scripts": {
+    "test": "node tests/run-all.js"
+  },
+  "keywords": ["claude-code", "codex", "hooks", "plugin", "cross-platform", "ai-agent", "universal"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}

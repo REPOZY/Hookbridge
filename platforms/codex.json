@@ -1,10 +1,20 @@
 {
   "id": "codex",
-  "docUrls": ["https://developers.openai.com/codex/hooks"],
-  "knownEvents": [
-    "SessionStart", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Stop"
+  "docUrls": [
+    "https://developers.openai.com/codex/hooks"
   ],
-  "knownHookTypes": ["command"],
+  "knownEvents": [
+    "SessionStart",
+    "PreToolUse",
+    "PostToolUse",
+    "UserPromptSubmit",
+    "Stop"
+  ],
+  "knownHookTypes": [
+    "command"
+  ],
   "lastChecked": "2026-04-05",
-  "pageHashes": {}
+  "pageHashes": {
+    "https://developers.openai.com/codex/hooks": "c76e7bdfeea5db2f9f7059055d0665ae48115b078282faebfff0830bc65dc23f"
+  }
 }
