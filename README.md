@@ -1,8 +1,8 @@
-# hookbridge
+# Hookbridge
 
 **One file. Every platform.**
 
-hookbridge lets you build a plugin for AI coding tools — like Claude Code or Codex — without having to maintain separate, incompatible files for each one.
+Hookbridge lets you build a plugin for AI coding tools — like Claude Code or Codex — without having to maintain separate, incompatible files for each one.
 
 ---
 
@@ -12,7 +12,7 @@ AI coding tools like **Claude Code** (by Anthropic) and **Codex** (by OpenAI) bo
 
 The problem: Claude Code and Codex have completely different formats for hooks. They use different file names, different JSON structures, different ways of referencing paths, and different sets of supported events. A plugin built for one platform simply won't work on the other.
 
-**Without hookbridge**, a plugin author has to maintain two separate files by hand:
+**Without Hookbridge**, a plugin author has to maintain two separate files by hand:
 
 ```
 hooks/
@@ -22,7 +22,7 @@ hooks/
 
 These files get out of sync. A change in one is forgotten in the other. And if a feature exists in Claude Code but not in Codex, there's no guidance on what to do.
 
-**With hookbridge**, you write one source file:
+**With Hookbridge**, you write one source file:
 
 ```yaml
 # plugin.universal.yaml — you only touch this file
@@ -35,17 +35,17 @@ hooks:
 Then run one command:
 
 ```bash
-node hookbridge.js compile --schema plugin.universal.yaml --out .
+node Hookbridge.js compile --schema plugin.universal.yaml --out .
 ```
 
-hookbridge generates both platform files automatically — correctly formatted, correctly structured, never out of sync. If a feature you're using doesn't exist on one of the platforms, it tells you exactly what it shimmed (approximated) and what it couldn't support at all.
+Hookbridge generates both platform files automatically — correctly formatted, correctly structured, never out of sync. If a feature you're using doesn't exist on one of the platforms, it tells you exactly what it shimmed (approximated) and what it couldn't support at all.
 
 ---
 
 ## Who this is for
 
 - **Plugin authors** who want their plugin to work on both Claude Code and Codex without maintaining two separate hook files
-- **Anyone adding new platforms** — hookbridge is designed to be extended with adapters for new AI coding tools as the ecosystem grows
+- **Anyone adding new platforms** — Hookbridge is designed to be extended with adapters for new AI coding tools as the ecosystem grows
 
 ---
 
@@ -62,13 +62,13 @@ Open `my-plugin.yaml` and fill in your plugin's details (name, author, hooks).
 **Step 2 — Check your schema is valid:**
 
 ```bash
-node hookbridge.js validate --schema my-plugin.yaml
+node Hookbridge.js validate --schema my-plugin.yaml
 ```
 
 **Step 3 — Compile to your plugin's root directory:**
 
 ```bash
-node hookbridge.js compile --schema my-plugin.yaml --out /path/to/your/plugin
+node Hookbridge.js compile --schema my-plugin.yaml --out /path/to/your/plugin
 ```
 
 This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), and the plugin manifests for both platforms. It also writes `loss-report.md` — more on that below.
@@ -76,7 +76,7 @@ This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), 
 **Step 4 — Check for drift after any manual edits:**
 
 ```bash
-node hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
+node Hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
 ```
 
 ---
@@ -121,7 +121,7 @@ extensions:
 
 ### `{PLUGIN_ROOT}` — the universal path placeholder
 
-Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. hookbridge replaces it with the correct platform-specific path resolution:
+Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. Hookbridge replaces it with the correct platform-specific path resolution:
 
 - Claude Code: `"${MY_PLUGIN_ROOT}/hooks/start.js"` (environment variable)
 - Codex: `if [ -f "$HOME/.codex/my-plugin/hooks/start.js" ]; then ...` (install path with fallback)
@@ -141,12 +141,12 @@ Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. hookbridg
 
 ## The loss report
 
-Not every Claude Code feature exists in Codex (and vice versa). When hookbridge compiles your schema, it writes a `loss-report.md` explaining every gap it found:
+Not every Claude Code feature exists in Codex (and vice versa). When Hookbridge compiles your schema, it writes a `loss-report.md` explaining every gap it found:
 
 | Severity | What it means |
 |---|---|
 | ✅ **Native** | Works perfectly on this platform |
-| 🔧 **Shimmed** | hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
+| 🔧 **Shimmed** | Hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
 | 🚫 **Hard limit** | This feature is impossible on this platform. No workaround exists. |
 | ⚠️ **Warning** | Supported, but with a caveat (e.g. the `async` flag is ignored on Codex) |
 
@@ -156,7 +156,7 @@ The loss report is not a failure — it's information. It tells you exactly what
 
 ## Running the tests
 
-hookbridge has no dependencies beyond Node.js. Tests use Node's built-in `assert` module.
+Hookbridge has no dependencies beyond Node.js. Tests use Node's built-in `assert` module.
 
 ```bash
 node tests/run-all.js
@@ -164,9 +164,9 @@ node tests/run-all.js
 
 ---
 
-## Extending hookbridge: adding a new platform
+## Extending Hookbridge: adding a new platform
 
-hookbridge is built to support more platforms as the AI coding tool ecosystem grows. Each platform is a self-contained adapter file.
+Hookbridge is built to support more platforms as the AI coding tool ecosystem grows. Each platform is a self-contained adapter file.
 
 **Three things to add** when supporting a new platform:
 
