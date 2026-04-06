@@ -104,6 +104,8 @@ function parse(yamlContent) {
       ...(meta.author && { author: meta.author }),
       ...(meta.homepage && { homepage: meta.homepage }),
       ...(meta.repository && { repository: meta.repository }),
+      ...(meta.license && { license: meta.license }),
+      ...(meta.keywords && { keywords: meta.keywords }),
     },
     hooks: hooks.map(h => ({
       event: h.event,
