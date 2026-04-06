@@ -63,18 +63,38 @@ Hookbridge generates both platform files automatically — correctly formatted, 
 - **Plugin authors starting fresh** — write `plugin.universal.yaml` once, compile to all platforms
 - **Plugin authors with an existing plugin** — migrate in minutes; see [I already have a plugin](#i-already-have-a-plugin) below
 - **Anyone adding new platforms** — Hookbridge is designed to be extended with adapters for new AI coding tools as the ecosystem grows
+- **AI-assisted developers** — both sections above include ready-to-paste prompts for generating or migrating your schema with an AI assistant
 
 ---
 
 ## Quick start (new plugin)
 
-**Step 1 — Copy the example schema and adapt it to your plugin:**
+**Step 1 — Create your `plugin.universal.yaml`:**
+
+Copy the example and edit it manually:
 
 ```bash
 cp node_modules/hookbridge/example/plugin.universal.yaml plugin.universal.yaml
 ```
 
-Or copy it manually from [example/plugin.universal.yaml](example/plugin.universal.yaml). Open it and fill in your plugin's details (name, author, hooks).
+Or copy it from [example/plugin.universal.yaml](example/plugin.universal.yaml) and fill in your plugin's details (name, author, hooks).
+
+> **Using an AI assistant?** Paste this into Claude, Codex, or any AI:
+>
+> ```
+> I'm creating a new hookbridge plugin. Generate a complete plugin.universal.yaml file for me.
+>
+> Plugin name: [your plugin name]
+> Description: [what it does]
+> Platforms: claude-code, codex
+> Hooks I need:
+> - [describe each hook in plain English, e.g. "run hooks/session-start.js when a session starts"]
+> - [another hook]
+>
+> Use {PLUGIN_ROOT} in all command paths. Follow the hookbridge schema exactly.
+> ```
+>
+> The AI will generate a valid `plugin.universal.yaml` you can drop straight in. Run `hookbridge validate` afterward to confirm it's correct.
 
 **Step 2 — Check your schema is valid:**
 
@@ -113,6 +133,26 @@ If you already have a working plugin with hand-written `hooks.json` and `codex-h
 **Step 1 — Write `plugin.universal.yaml` that matches your existing hooks**
 
 Look at your existing `hooks/hooks.json` and recreate the same hooks in `plugin.universal.yaml`. Use the [source file reference](#the-source-file-pluginuniversalyaml) below as a guide. Put the file in your plugin's root directory alongside `hooks/`.
+
+> **Using an AI assistant?** This step is the one most worth delegating. Paste this into Claude, Codex, or any AI:
+>
+> ```
+> Convert my existing plugin hooks to a hookbridge plugin.universal.yaml file.
+>
+> Here is my hooks/hooks.json:
+> [paste the full contents]
+>
+> Here is my hooks/codex-hooks.json (if you have one):
+> [paste the full contents, or delete this line]
+>
+> Plugin name: [your plugin name]
+> Claude Code env var: [the env var your plugin uses, e.g. MY_PLUGIN_ROOT]
+> Codex install path: $HOME/.codex/[your plugin name]
+>
+> Generate the complete plugin.universal.yaml. Use {PLUGIN_ROOT} in all command paths.
+> ```
+>
+> Then run `hookbridge diff` — if the output says "All files match", the migration is verified and complete.
 
 **Step 2 — Compile to a temporary location first**
 
