@@ -1,5 +1,5 @@
 # example/plugin.universal.yaml — minimal hookbridge example
-# Compile with: node hookbridge.js compile --schema example/plugin.universal.yaml --out ./output
+# Compile with: hookbridge compile
 
 meta:
   name: my-plugin
@@ -8,6 +8,8 @@ meta:
   author: "Your Name"
   homepage: "https://github.com/yourname/my-plugin"
   repository: "https://github.com/yourname/my-plugin"
+  license: "MIT"
+  keywords: ["tag1", "tag2"]
   platforms: [claude-code, codex]
 
 hooks:
@@ -75,3 +77,5 @@ extensions:
   codex:
     install_path: "$HOME/.codex/{meta.name}"
     description: "My plugin for Codex"
+    display_name: "My Plugin"
+    short_description: "One-liner shown in Codex UI"
