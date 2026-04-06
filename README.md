@@ -79,22 +79,25 @@ cp node_modules/hookbridge/example/plugin.universal.yaml plugin.universal.yaml
 
 Or copy it from [example/plugin.universal.yaml](example/plugin.universal.yaml) and fill in your plugin's details (name, author, hooks).
 
-> **Using an AI assistant?** Paste this into Claude, Codex, or any AI:
+> **Using an AI assistant?** Paste this into Claude, Codex, or any AI that has access to your filesystem:
 >
 > ```
-> I'm creating a new hookbridge plugin. Generate a complete plugin.universal.yaml file for me.
+> I'm creating a new hookbridge plugin and need you to generate plugin.universal.yaml for me.
 >
-> Plugin name: [your plugin name]
-> Description: [what it does]
-> Platforms: claude-code, codex
-> Hooks I need:
-> - [describe each hook in plain English, e.g. "run hooks/session-start.js when a session starts"]
-> - [another hook]
+> Before writing anything:
+> 1. Read my current directory. Look for hook scripts in hooks/, manifest files
+>    (.claude-plugin/plugin.json, .codex-plugin/plugin.json), README, and package.json.
+>    Use these to infer: plugin name, description, license, keywords, and which hooks are needed.
+> 2. For the Claude Code env var: look in any existing hooks.json — it appears in every command
+>    path as ${ENV_VAR_NAME}/... Extract it from there.
+> 3. For the Codex install path: always $HOME/.codex/{plugin-name} — standard Codex convention.
+> 4. For anything you still cannot determine, ask me before generating.
 >
-> Use {PLUGIN_ROOT} in all command paths. Follow the hookbridge schema exactly.
+> Once you have everything, generate a complete plugin.universal.yaml.
+> Use {PLUGIN_ROOT} in all hook command paths. Follow the hookbridge schema exactly.
 > ```
 >
-> The AI will generate a valid `plugin.universal.yaml` you can drop straight in. Run `hookbridge validate` afterward to confirm it's correct.
+> The AI will explore your project, ask only for what it can't find, then generate a valid `plugin.universal.yaml`. Run `hookbridge validate` afterward to confirm it's correct.
 
 **Step 2 — Check your schema is valid:**
 
@@ -134,22 +137,22 @@ If you already have a working plugin with hand-written `hooks.json` and `codex-h
 
 Look at your existing `hooks/hooks.json` and recreate the same hooks in `plugin.universal.yaml`. Use the [source file reference](#the-source-file-pluginuniversalyaml) below as a guide. Put the file in your plugin's root directory alongside `hooks/`.
 
-> **Using an AI assistant?** This step is the one most worth delegating. Paste this into Claude, Codex, or any AI:
+> **Using an AI assistant?** This step is the one most worth delegating. Paste this into Claude, Codex, or any AI that has access to your filesystem:
 >
 > ```
-> Convert my existing plugin hooks to a hookbridge plugin.universal.yaml file.
+> I want to migrate my existing plugin to hookbridge. Generate a plugin.universal.yaml for me.
 >
-> Here is my hooks/hooks.json:
-> [paste the full contents]
+> Read these files from my current directory:
+> - hooks/hooks.json
+> - hooks/codex-hooks.json (if it exists)
+> - .claude-plugin/plugin.json (if it exists)
+> - .codex-plugin/plugin.json (if it exists)
 >
-> Here is my hooks/codex-hooks.json (if you have one):
-> [paste the full contents, or delete this line]
+> From hooks.json, extract the Claude Code env var from the command paths (it appears as ${ENV_VAR}/...).
+> From the manifest files, extract name, description, license, keywords, display_name, and short_description.
+> For the Codex install path: always $HOME/.codex/{plugin-name} — standard Codex convention.
 >
-> Plugin name: [your plugin name]
-> Claude Code env var: [the env var your plugin uses, e.g. MY_PLUGIN_ROOT]
-> Codex install path: $HOME/.codex/[your plugin name]
->
-> Generate the complete plugin.universal.yaml. Use {PLUGIN_ROOT} in all command paths.
+> Generate the complete plugin.universal.yaml. Use {PLUGIN_ROOT} in all hook command paths.
 > ```
 >
 > Then run `hookbridge diff` — if the output says "All files match", the migration is verified and complete.
@@ -209,6 +212,8 @@ meta:
   author: "Your Name"
   homepage: "https://github.com/you/my-plugin"
   repository: "https://github.com/you/my-plugin"
+  license: "MIT"                # Optional — emitted into both plugin manifests
+  keywords: ["tag1", "tag2"]    # Optional — emitted into both plugin manifests
   platforms: [claude-code, codex]   # Which platforms to compile for
 
 hooks:
@@ -238,6 +243,10 @@ extensions:
   codex:
     install_path: "$HOME/.codex/{meta.name}"
     description: "Codex description"
+    display_name: "My Plugin"       # Optional — human-readable name shown in Codex UI
+                                    # Defaults to meta.name if omitted
+    short_description: "One-liner"  # Optional — short blurb shown in Codex UI
+                                    # Defaults to description if omitted
 ```
 
 ### Hook types
