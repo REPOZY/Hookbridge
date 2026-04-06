@@ -160,9 +160,9 @@ function runCompile(args) {
   const warns = allLosses.filter(l => l.severity === 'warn').length;
 
   if (allLosses.length > 0) {
-    console.log(`\nLoss report (${shimmed} shimmed, ${hardLimits} hard limits, ${warns} warnings):`);
+    console.log(`\nLoss report (${shimmed} approximated, ${hardLimits} hard limits, ${warns} warnings):`);
     for (const l of allLosses) {
-      const label = l.severity === 'shimmed' ? 'SHIM'
+      const label = l.severity === 'shimmed' ? 'APPROX'
         : l.severity === 'hard-limit' ? 'HARD'
         : l.severity === 'error' ? 'ERR '
         : 'WARN';
@@ -171,7 +171,7 @@ function runCompile(args) {
   }
 
   if (!args.dryRun) console.log(`\nFull report written to: ${reportPath}`);
-  console.log(`\nDone. ${allFiles.size} files${args.dryRun ? ' (dry-run)' : ' written'}, ${shimmed} shimmed, ${hardLimits} hard limits, ${warns} warnings.`);
+  console.log(`\nDone. ${allFiles.size} files${args.dryRun ? ' (dry-run)' : ' written'}, ${shimmed} approximated, ${hardLimits} hard limits, ${warns} warnings.`);
 }
 
 function runValidate(args) {
