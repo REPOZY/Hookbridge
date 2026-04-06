@@ -153,11 +153,13 @@ function emit(ir) {
     ...(ir.meta.author && { author: { name: ir.meta.author } }),
     ...(ir.meta.homepage && { homepage: ir.meta.homepage }),
     ...(ir.meta.repository && { repository: ir.meta.repository }),
+    ...(ir.meta.license && { license: ir.meta.license }),
+    ...(ir.meta.keywords && { keywords: ir.meta.keywords }),
     skills: './skills/',
     hooks: './hooks/codex-hooks.json',
     interface: {
-      displayName: ir.meta.name,
-      shortDescription: ext.description || ir.meta.description,
+      displayName: ext.display_name || ir.meta.name,
+      shortDescription: ext.short_description || ext.description || ir.meta.description,
     },
   };
 
