@@ -6,22 +6,6 @@ Hookbridge lets you build a plugin for AI coding tools — like Claude Code or C
 
 ---
 
-## Installation
-
-```bash
-npm install -g hookbridge
-```
-
-Or use it without installing via npx:
-
-```bash
-npx hookbridge compile
-```
-
-Requires Node.js 16 or later. No other dependencies.
-
----
-
 ## The problem
 
 AI coding tools like **Claude Code** (by Anthropic) and **Codex** (by OpenAI) both support *plugins*. Plugins can run scripts automatically when things happen — when a session starts, when you submit a prompt, when a file gets edited. These automatic scripts are called **hooks**.
@@ -63,7 +47,23 @@ Hookbridge generates both platform files automatically — correctly formatted, 
 - **Plugin authors starting fresh** — write `plugin.universal.yaml` once, compile to all platforms
 - **Plugin authors with an existing plugin** — migrate in minutes; see [I already have a plugin](#i-already-have-a-plugin) below
 - **Anyone adding new platforms** — Hookbridge is designed to be extended with adapters for new AI coding tools as the ecosystem grows
-- **AI-assisted developers** — both sections above include ready-to-paste prompts for generating or migrating your schema with an AI assistant
+- **AI-assisted developers** — both usage sections below include ready-to-paste prompts for generating or migrating your schema with an AI assistant
+
+---
+
+## Installation
+
+```bash
+npm install -g hookbridge
+```
+
+Or use it without installing via npx:
+
+```bash
+npx hookbridge compile
+```
+
+Requires Node.js 16 or later. No other dependencies.
 
 ---
 
@@ -278,6 +278,21 @@ Claude Code supports 26 events. Codex supports 5. The table below shows the even
 
 ---
 
+## The loss report
+
+Not every Claude Code feature exists in Codex (and vice versa). When Hookbridge compiles your schema, it writes a `loss-report.md` explaining every gap it found:
+
+| Severity | What it means |
+|---|---|
+| ✅ **Native** | Works perfectly on this platform |
+| 🔧 **Shimmed** | Hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
+| 🚫 **Hard limit** | This feature is impossible on this platform. No workaround exists. |
+| ⚠️ **Warning** | Supported, but with a caveat (e.g. the `async` flag is ignored on Codex) |
+
+The loss report is not a failure — it's information. It tells you exactly what your plugin users will experience on each platform.
+
+---
+
 ## CLI reference
 
 All commands are run from your plugin's root directory (where `plugin.universal.yaml` lives). All flags have sensible defaults — in the normal case you won't need any of them.
@@ -304,31 +319,6 @@ Options (run command only):
   --merge <json>    JSON merged into the payload (overrides generated values)
   --script <path>   Run a specific script directly, bypassing schema lookup
   --cwd <path>      Working directory in the payload (default: process.cwd())
-```
-
----
-
-## The sync command
-
-Platform docs change. New hook events get added, old ones get removed. Running `sync` checks the live documentation for each platform and tells you what's changed:
-
-```bash
-hookbridge sync
-```
-
-```
-hookbridge sync — checking 2 platform(s)
-
-  claude-code... ✓
-  codex... ✓
-
-Report: ./platform-sync-report.md
-```
-
-If new events are detected, the report lists them and tells you exactly what to update. The command exits 1 if any changes are found — useful in CI.
-
-```bash
-hookbridge sync --platform claude-code   # Check one platform only
 ```
 
 ---
@@ -384,43 +374,28 @@ hookbridge run --event SessionStart --platform codex
 
 ---
 
-## The loss report
+## The sync command
 
-Not every Claude Code feature exists in Codex (and vice versa). When Hookbridge compiles your schema, it writes a `loss-report.md` explaining every gap it found:
-
-| Severity | What it means |
-|---|---|
-| ✅ **Native** | Works perfectly on this platform |
-| 🔧 **Shimmed** | Hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
-| 🚫 **Hard limit** | This feature is impossible on this platform. No workaround exists. |
-| ⚠️ **Warning** | Supported, but with a caveat (e.g. the `async` flag is ignored on Codex) |
-
-The loss report is not a failure — it's information. It tells you exactly what your plugin users will experience on each platform.
-
----
-
-## Running the tests
+Platform docs change. New hook events get added, old ones get removed. Running `sync` checks the live documentation for each platform and tells you what's changed:
 
 ```bash
-npm test
+hookbridge sync
 ```
 
----
+```
+hookbridge sync — checking 2 platform(s)
 
-## Extending Hookbridge: adding a new platform
+  claude-code... ✓
+  codex... ✓
 
-Hookbridge is built to support more platforms as the AI coding tool ecosystem grows. Each platform is a self-contained adapter file.
+Report: ./platform-sync-report.md
+```
 
-**Three things to add** when supporting a new platform:
+If new events are detected, the report lists them and tells you exactly what to update. The command exits 1 if any changes are found — useful in CI.
 
-1. **Create the adapter:** `src/adapters/<platform-id>.js`
-   — implement one function: `emit(ir)` that returns `{ files, shims, losses }`
-   — see `src/adapters/claude-code.js` for a reference implementation
-
-2. **Register the adapter:** add it to `src/adapter-registry.js`
-
-3. **Register the platform ID:** add the ID to `REGISTERED_ADAPTERS` in `src/parser.js`
-   *(this step is easy to forget — it's what lets schemas declare the new platform as a target)*
+```bash
+hookbridge sync --platform claude-code   # Check one platform only
+```
 
 ---
 
@@ -451,6 +426,31 @@ The key design decision: **adapters never see the raw YAML**. They only see the 
 The `sync` command reads `platforms/<id>.json` spec files to know what events are expected, fetches live doc pages, and compares them — no adapter code involved.
 
 The `run` command reads `payloads/<id>.json` for mock payload templates, resolves dynamic fields (session IDs, paths, timestamps), then spawns your hook scripts with the payload on stdin. It never calls the adapters — it works directly from the schema's IR.
+
+---
+
+## Extending Hookbridge: adding a new platform
+
+Hookbridge is built to support more platforms as the AI coding tool ecosystem grows. Each platform is a self-contained adapter file.
+
+**Three things to add** when supporting a new platform:
+
+1. **Create the adapter:** `src/adapters/<platform-id>.js`
+   — implement one function: `emit(ir)` that returns `{ files, shims, losses }`
+   — see `src/adapters/claude-code.js` for a reference implementation
+
+2. **Register the adapter:** add it to `src/adapter-registry.js`
+
+3. **Register the platform ID:** add the ID to `REGISTERED_ADAPTERS` in `src/parser.js`
+   *(this step is easy to forget — it's what lets schemas declare the new platform as a target)*
+
+---
+
+## Running the tests
+
+```bash
+npm test
+```
 
 ---
 
