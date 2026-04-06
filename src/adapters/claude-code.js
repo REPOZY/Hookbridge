@@ -70,6 +70,8 @@ function emit(ir) {
     ...(ir.meta.author && { author: { name: ir.meta.author } }),
     ...(ir.meta.homepage && { homepage: ir.meta.homepage }),
     ...(ir.meta.repository && { repository: ir.meta.repository }),
+    ...(ir.meta.license && { license: ir.meta.license }),
+    ...(ir.meta.keywords && { keywords: ir.meta.keywords }),
   };
 
   result.files.set('.claude-plugin/plugin.json', compactShortArrays(JSON.stringify(manifest, null, 2)) + '\n');
