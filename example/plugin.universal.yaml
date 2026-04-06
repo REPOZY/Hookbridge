@@ -23,7 +23,7 @@ hooks:
     command: "node {PLUGIN_ROOT}/hooks/on-prompt.js"
     platforms: [claude-code, codex]
 
-  # Track file edits — Claude Code native, Codex: shimmed via transcript analysis
+  # Track file edits — Claude Code native, Codex: approximated via transcript analysis
   - event: PostToolUse
     matcher: "Edit|Write"
     command: "node {PLUGIN_ROOT}/hooks/track-edits.js"
