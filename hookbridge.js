@@ -13,7 +13,7 @@ const { spawnSync } = require('child_process');
 const { generatePayload } = require('./src/payload-runner');
 const { VALID_EVENTS } = require('./src/ir');
 
-const VERSION = '0.1.0';
+const VERSION = '1.0.0';
 
 function printHelp() {
   console.log(`hookbridge v${VERSION}
