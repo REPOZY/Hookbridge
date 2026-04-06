@@ -9,6 +9,14 @@
   "scripts": {
     "test": "node tests/run-all.js"
   },
+  "files": [
+    "hookbridge.js",
+    "src/",
+    "platforms/",
+    "payloads/",
+    "vendor/",
+    "example/"
+  ],
   "keywords": ["claude-code", "codex", "hooks", "plugin", "cross-platform", "ai-agent", "universal"],
   "license": "MIT",
   "engines": {

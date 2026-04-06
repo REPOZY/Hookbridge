@@ -6,6 +6,22 @@ Hookbridge lets you build a plugin for AI coding tools — like Claude Code or C
 
 ---
 
+## Installation
+
+```bash
+npm install -g hookbridge
+```
+
+Or use it without installing via npx:
+
+```bash
+npx hookbridge compile
+```
+
+Requires Node.js 16 or later. No other dependencies.
+
+---
+
 ## The problem
 
 AI coding tools like **Claude Code** (by Anthropic) and **Codex** (by OpenAI) both support *plugins*. Plugins can run scripts automatically when things happen — when a session starts, when you submit a prompt, when a file gets edited. These automatic scripts are called **hooks**.
@@ -22,7 +38,7 @@ hooks/
 
 These files get out of sync. A change in one is forgotten in the other. And if a feature exists in Claude Code but not in Codex, there's no guidance on what to do.
 
-**With hookbridge**, you write one source file:
+**With Hookbridge**, you write one source file:
 
 ```yaml
 # plugin.universal.yaml — you only touch this file
@@ -32,10 +48,10 @@ hooks:
     platforms: [claude-code, codex]
 ```
 
-Then run one command:
+Then run one command from your plugin root:
 
 ```bash
-node hookbridge.js compile --schema plugin.universal.yaml --out .
+hookbridge compile
 ```
 
 Hookbridge generates both platform files automatically — correctly formatted, correctly structured, never out of sync. If a feature you're using doesn't exist on one of the platforms, it tells you exactly what it shimmed (approximated) and what it couldn't support at all.
@@ -44,48 +60,100 @@ Hookbridge generates both platform files automatically — correctly formatted, 
 
 ## Who this is for
 
-- **Plugin authors** who want their plugin to work on both Claude Code and Codex without maintaining two separate hook files
+- **Plugin authors starting fresh** — write `plugin.universal.yaml` once, compile to all platforms
+- **Plugin authors with an existing plugin** — migrate in minutes; see [I already have a plugin](#i-already-have-a-plugin) below
 - **Anyone adding new platforms** — Hookbridge is designed to be extended with adapters for new AI coding tools as the ecosystem grows
 
 ---
 
-## Quick start
+## Quick start (new plugin)
 
 **Step 1 — Copy the example schema and adapt it to your plugin:**
 
 ```bash
-cp example/plugin.universal.yaml my-plugin.yaml
+cp node_modules/hookbridge/example/plugin.universal.yaml plugin.universal.yaml
 ```
 
-Open `my-plugin.yaml` and fill in your plugin's details (name, author, hooks).
+Or copy it manually from [example/plugin.universal.yaml](example/plugin.universal.yaml). Open it and fill in your plugin's details (name, author, hooks).
 
 **Step 2 — Check your schema is valid:**
 
 ```bash
-node hookbridge.js validate --schema my-plugin.yaml
+hookbridge validate
 ```
 
 **Step 3 — Compile to your plugin's root directory:**
 
 ```bash
-node hookbridge.js compile --schema my-plugin.yaml --out /path/to/your/plugin
+hookbridge compile
 ```
 
-This writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), and the plugin manifests for both platforms. It also writes `loss-report.md` — more on that below.
+Run this from your plugin's root directory (where `plugin.universal.yaml` lives). Hookbridge writes `hooks/hooks.json` (Claude Code), `hooks/codex-hooks.json` (Codex), and the plugin manifests for both platforms. It also writes `loss-report.md` — more on that below.
 
 **Step 4 — Check for drift after any manual edits:**
 
 ```bash
-node hookbridge.js diff --schema my-plugin.yaml --out /path/to/your/plugin
+hookbridge diff
 ```
 
 **Step 5 — Test your hooks locally without a live session:**
 
 ```bash
-node hookbridge.js run --event SessionStart --schema my-plugin.yaml
+hookbridge run --event SessionStart
 ```
 
 This fires every hook that matches `SessionStart` with a realistic mock payload — no Claude Code or Codex session needed. See the [run command](#the-run-command) section below.
+
+---
+
+## I already have a plugin
+
+If you already have a working plugin with hand-written `hooks.json` and `codex-hooks.json`, Hookbridge can take over — and `hookbridge diff` makes the migration verifiable with zero risk.
+
+**Step 1 — Write `plugin.universal.yaml` that matches your existing hooks**
+
+Look at your existing `hooks/hooks.json` and recreate the same hooks in `plugin.universal.yaml`. Use the [source file reference](#the-source-file-pluginuniversalyaml) below as a guide. Put the file in your plugin's root directory alongside `hooks/`.
+
+**Step 2 — Compile to a temporary location first**
+
+```bash
+hookbridge compile --out /tmp/hb-preview
+```
+
+This generates the files without touching your existing plugin directory.
+
+**Step 3 — Verify the output matches your existing files**
+
+```bash
+hookbridge diff
+```
+
+Hookbridge compiles in memory and compares the result against the files currently on disk. If everything matches, you'll see:
+
+```
+All 4 files match.
+```
+
+If there are differences, the diff tells you exactly which files differ and how. Fix your `plugin.universal.yaml` until `diff` reports a clean match.
+
+**Step 4 — Switch over**
+
+Once `diff` is clean:
+
+```bash
+hookbridge compile
+```
+
+From this point, `plugin.universal.yaml` is your source of truth. Never edit `hooks/hooks.json` or `hooks/codex-hooks.json` directly — they will be overwritten on the next compile. Any future hook changes go into `plugin.universal.yaml` only.
+
+**Step 5 — Add compile to your workflow**
+
+Add hookbridge to your build or publish step so the generated files are always in sync:
+
+```bash
+# In a Makefile, CI step, or pre-publish script:
+hookbridge compile
+```
 
 ---
 
@@ -170,12 +238,42 @@ Claude Code supports 26 events. Codex supports 5. The table below shows the even
 
 ---
 
+## CLI reference
+
+All commands are run from your plugin's root directory (where `plugin.universal.yaml` lives). All flags have sensible defaults — in the normal case you won't need any of them.
+
+```
+hookbridge <command> [options]
+
+Commands:
+  compile    Read plugin.universal.yaml, emit platform files + loss report
+  validate   Parse and validate schema only
+  diff       Compare compiled output against files on disk
+  sync       Check platform docs for new or removed hook events
+  run        Simulate an event and fire matching hook scripts locally
+  help       Show help
+
+Options (all commands):
+  --schema <path>   Path to plugin.universal.yaml (default: ./plugin.universal.yaml)
+  --out <dir>       Output root directory (default: . — current directory)
+  --platform <id>   Limit to one platform (e.g. codex)
+
+Options (run command only):
+  --event <name>    Event to simulate (required)
+  --tool <name>     Tool name for tool events (default: Bash)
+  --merge <json>    JSON merged into the payload (overrides generated values)
+  --script <path>   Run a specific script directly, bypassing schema lookup
+  --cwd <path>      Working directory in the payload (default: process.cwd())
+```
+
+---
+
 ## The sync command
 
 Platform docs change. New hook events get added, old ones get removed. Running `sync` checks the live documentation for each platform and tells you what's changed:
 
 ```bash
-node hookbridge.js sync
+hookbridge sync
 ```
 
 ```
@@ -187,10 +285,10 @@ hookbridge sync — checking 2 platform(s)
 Report: ./platform-sync-report.md
 ```
 
-If new events are detected, the report lists them and tells you exactly what to update (`src/ir.js` VALID_EVENTS and the relevant adapter). The command exits 1 if any changes are found — useful in CI.
+If new events are detected, the report lists them and tells you exactly what to update. The command exits 1 if any changes are found — useful in CI.
 
 ```bash
-node hookbridge.js sync --platform claude-code   # Check one platform only
+hookbridge sync --platform claude-code   # Check one platform only
 ```
 
 ---
@@ -200,7 +298,7 @@ node hookbridge.js sync --platform claude-code   # Check one platform only
 Test your hook scripts locally without starting a real Claude Code or Codex session:
 
 ```bash
-node hookbridge.js run --event SessionStart
+hookbridge run --event SessionStart
 ```
 
 Hookbridge generates a realistic mock payload and fires every hook in your schema that matches the event, passing the payload via stdin — exactly how the real platform does it.
@@ -221,31 +319,23 @@ hookbridge run — SessionStart on claude-code
   ✓  exit 0
 ```
 
-**Options:**
-
-```bash
---event <name>    Event to simulate (required)
---platform <id>   Platform to simulate (default: claude-code)
---tool <name>     Tool name for PreToolUse/PostToolUse payloads (default: Bash)
---cwd <path>      Working directory in the payload (default: process.cwd())
---merge <json>    JSON object merged into the payload (overrides generated values)
---script <path>   Run a specific script directly, bypassing schema lookup
-```
-
 **Examples:**
 
 ```bash
 # Fire all SessionStart hooks in your schema
-node hookbridge.js run --event SessionStart --schema my-plugin.yaml
+hookbridge run --event SessionStart
 
 # Simulate a PostToolUse with a specific tool
-node hookbridge.js run --event PostToolUse --tool Edit
+hookbridge run --event PostToolUse --tool Edit
 
 # Override specific payload fields
-node hookbridge.js run --event UserPromptSubmit --merge '{"prompt":"hello"}'
+hookbridge run --event UserPromptSubmit --merge '{"prompt":"hello"}'
 
 # Test a specific script directly (no schema needed)
-node hookbridge.js run --event SessionStart --script hooks/session-start.js
+hookbridge run --event SessionStart --script hooks/session-start.js
+
+# Test against Codex payloads
+hookbridge run --event SessionStart --platform codex
 ```
 
 > **Note on payload accuracy:**
@@ -271,10 +361,8 @@ The loss report is not a failure — it's information. It tells you exactly what
 
 ## Running the tests
 
-Hookbridge has no dependencies beyond Node.js. Tests use Node's built-in `assert` module.
-
 ```bash
-node tests/run-all.js
+npm test
 ```
 
 ---
