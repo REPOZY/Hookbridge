@@ -1,8 +1,10 @@
 # Hookbridge
 
-**One file. Every platform.**
+**Write your plugin hooks once. Deploy to every platform.**
 
-Hookbridge lets you build a plugin for AI coding tools — like Claude Code or Codex — without having to maintain separate, incompatible files for each one.
+Hookbridge is a compiler for AI coding tool plugins. You write one source file — `plugin.universal.yaml` — and Hookbridge generates the correct, native hook configuration for each platform you target (Claude Code, Codex, and more as the ecosystem grows).
+
+It also tells you exactly what it couldn't translate: every gap between platforms is documented in a `loss-report.md`, categorized as native support, approximated behavior, or a hard limit with no workaround. No silent failures. No guessing what your users will experience on a platform you don't use yourself.
 
 ---
 
@@ -278,14 +280,14 @@ Claude Code supports 26 events. Codex supports 5. The table below shows the even
 | `SessionStart` | ✅ Native | ✅ Native |
 | `UserPromptSubmit` | ✅ Native | ✅ Native |
 | `PreToolUse` | ✅ Native | ✅ Native (Bash only) |
-| `PostToolUse` | ✅ Native | ⚠️ Native (Bash only) — Edit/Write shimmed |
+| `PostToolUse` | ✅ Native | ⚠️ Native (Bash only) — Edit/Write approximated |
 | `Stop` | ✅ Native | ✅ Native |
 
 **Claude Code-only events** (all produce a hard-limit loss on Codex):
 
 `SessionEnd` · `InstructionsLoaded` · `PostToolUseFailure` · `PermissionRequest` · `PermissionDenied` · `SubagentStart` · `SubagentStop` · `TeammateIdle` · `TaskCreated` · `TaskCompleted` · `StopFailure` · `FileChanged` · `CwdChanged` · `ConfigChange` · `WorktreeCreate` · `WorktreeRemove` · `Notification` · `PreCompact` · `PostCompact` · `Elicitation` · `ElicitationResult`
 
-`SubagentStop` and `SubagentStart` are shimmed on Codex via stop-time transcript analysis (fires at session end, not in real time).
+`SubagentStop` and `SubagentStart` are approximated on Codex via stop-time transcript analysis (fires at session end, not in real time).
 
 ---
 
@@ -296,7 +298,7 @@ Not every Claude Code feature exists in Codex (and vice versa). When Hookbridge 
 | Severity | What it means |
 |---|---|
 | ✅ **Native** | Works perfectly on this platform |
-| 🔧 **Shimmed** | Hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
+| 🔧 **Approximated** | Hookbridge generated a workaround script that approximates the behavior. It works, but with limitations (usually fires at session end rather than in real time) |
 | 🚫 **Hard limit** | This feature is impossible on this platform. No workaround exists. |
 | ⚠️ **Warning** | Supported, but with a caveat (e.g. the `async` flag is ignored on Codex) |
 
