@@ -93,7 +93,8 @@ Or copy it from [example/plugin.universal.yaml](example/plugin.universal.yaml) a
 > 3. For the Codex install path: always $HOME/.codex/{plugin-name} — standard Codex convention.
 > 4. For anything you still cannot determine, ask me before generating.
 >
-> Once you have everything, generate a complete plugin.universal.yaml.
+> Once you have everything, generate a complete plugin.universal.yaml and place it in the
+> root of the plugin directory (alongside hooks/ and skills/).
 > Use {PLUGIN_ROOT} in all hook command paths. Follow the hookbridge schema exactly.
 > ```
 >
@@ -152,7 +153,8 @@ Look at your existing `hooks/hooks.json` and recreate the same hooks in `plugin.
 > From the manifest files, extract name, description, license, keywords, display_name, and short_description.
 > For the Codex install path: always $HOME/.codex/{plugin-name} — standard Codex convention.
 >
-> Generate the complete plugin.universal.yaml. Use {PLUGIN_ROOT} in all hook command paths.
+> Generate the complete plugin.universal.yaml, place it in the root of the plugin directory
+> (alongside hooks/ and skills/), and use {PLUGIN_ROOT} in all hook command paths.
 > ```
 >
 > Then run `hookbridge diff` — if the output says "All files match", the migration is verified and complete.
