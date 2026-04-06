@@ -55,7 +55,7 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: async:true produces warn loss');
 }
 
-// Test: PostToolUse(Edit|Write) → shimmed loss, hook NOT emitted natively
+// Test: PostToolUse(Edit|Write) → approximated loss, hook NOT emitted natively
 {
   const ir = makeIR([
     { event: 'PostToolUse', matcher: 'Edit|Write', command: 'node {PLUGIN_ROOT}/track.js', platforms: ['codex'] },
@@ -65,19 +65,19 @@ function makeIR(hooks = [], extensions = {}) {
   const postToolEntries = output.PostToolUse || [];
   const hasEditWrite = postToolEntries.some(e => e.matcher === 'Edit|Write');
   assert.strictEqual(hasEditWrite, false, 'Edit|Write not emitted natively');
-  assert.ok(result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('Edit|Write')), 'shimmed loss emitted');
+  assert.ok(result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('Edit|Write')), 'approximated loss emitted');
   assert.ok(result.shims.has('hooks/codex/stop-shim.js'), 'stop-shim.js generated');
-  console.log('PASS: PostToolUse(Edit|Write) shimmed');
+  console.log('PASS: PostToolUse(Edit|Write) approximated');
 }
 
-// Test: SubagentStop → shimmed loss
+// Test: SubagentStop → approximated loss
 {
   const ir = makeIR([
     { event: 'SubagentStop', command: 'node {PLUGIN_ROOT}/guard.js', platforms: ['codex'] },
   ]);
   const result = emit(ir);
-  assert.ok(result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('SubagentStop')), 'SubagentStop shimmed');
-  console.log('PASS: SubagentStop shimmed');
+  assert.ok(result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('SubagentStop')), 'SubagentStop approximated');
+  console.log('PASS: SubagentStop approximated');
 }
 
 // Test: PreToolUse(Read|Edit|Write) → hard-limit
@@ -117,7 +117,7 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: non-command type hook produces hard-limit on Codex');
 }
 
-// Test: SubagentStart → shimmed loss, stop-shim generated
+// Test: SubagentStart → approximated loss, stop-shim generated
 {
   const ir = makeIR([
     { event: 'SubagentStart', command: 'node {PLUGIN_ROOT}/hooks/subagent-start.js', platforms: ['codex'] },
@@ -125,12 +125,12 @@ function makeIR(hooks = [], extensions = {}) {
   const result = emit(ir);
   assert.ok(
     result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('SubagentStart')),
-    'SubagentStart shimmed loss emitted'
+    'SubagentStart approximated loss emitted'
   );
   assert.ok(result.shims.has('hooks/codex/stop-shim.js'), 'stop-shim.js generated');
   const shimContent = result.shims.get('hooks/codex/stop-shim.js');
   assert.ok(shimContent.includes('subagent-start.js'), 'Shim references subagent-start.js');
-  console.log('PASS: SubagentStart shimmed with stop-shim');
+  console.log('PASS: SubagentStart approximated with stop-shim');
 }
 
 console.log('\nAll Codex adapter tests passed.');
