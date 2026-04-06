@@ -170,7 +170,7 @@ function runCompile(args) {
     }
   }
 
-  console.log(`\nFull report written to: ${reportPath}`);
+  if (!args.dryRun) console.log(`\nFull report written to: ${reportPath}`);
   console.log(`\nDone. ${allFiles.size} files${args.dryRun ? ' (dry-run)' : ' written'}, ${shimmed} shimmed, ${hardLimits} hard limits, ${warns} warnings.`);
 }
 
