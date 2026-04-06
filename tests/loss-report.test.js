@@ -17,7 +17,7 @@ const { generateReport } = require('../src/loss-reporter');
   console.log('PASS: report has summary table');
 }
 
-// Test: shimmed entries show mechanism and limitations
+// Test: approximated entries show mechanism and limitations
 {
   const losses = [
     {
@@ -27,10 +27,10 @@ const { generateReport } = require('../src/loss-reporter');
   ];
   const files = { codex: ['codex-hooks.json'] };
   const report = generateReport(losses, files, { version: '0.1.0', schema: 'test.yaml' });
-  assert.ok(report.includes('SHIMMED'), 'Has SHIMMED label');
-  assert.ok(report.includes('transcript analysis'), 'Shows shim mechanism');
+  assert.ok(report.includes('APPROXIMATED'), 'Has APPROXIMATED label');
+  assert.ok(report.includes('transcript analysis'), 'Shows approximation mechanism');
   assert.ok(report.includes('Deferred'), 'Shows limitation');
-  console.log('PASS: shimmed entries show mechanism and limitations');
+  console.log('PASS: approximated entries show mechanism and limitations');
 }
 
 // Test: hard-limit entries show reason
