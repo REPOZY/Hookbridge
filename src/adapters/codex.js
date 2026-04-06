@@ -62,7 +62,7 @@ function emit(ir) {
         if (unsupported.some(m => ['Edit', 'Write'].includes(m))) {
           shimNeeded.editTracking = true;
           result.losses.push(createLoss(PLATFORM_ID, `PostToolUse(${hook.matcher})`, 'shimmed',
-            'Codex only emits PostToolUse for Bash — Edit/Write hooks shimmed via transcript analysis.',
+            'Codex only emits PostToolUse for Bash — Edit/Write hooks approximated via transcript analysis.',
             {
               shimMechanism: 'Stop-time transcript analysis infers file edits → stop-shim.js',
               limitations: 'Fires once at session end, not per-edit. Deferred, not real-time.',
@@ -71,7 +71,7 @@ function emit(ir) {
         if (unsupported.some(m => m === 'Skill')) {
           shimNeeded.sessionStats = true;
           result.losses.push(createLoss(PLATFORM_ID, `PostToolUse(${hook.matcher})`, 'shimmed',
-            'No Skill event surface on Codex — shimmed via transcript analysis.',
+            'No Skill event surface on Codex — approximated via transcript analysis.',
             {
               shimMechanism: 'Stop-time transcript analysis detects Skill invocations → stop-shim.js',
               limitations: 'Fires once at session end, not per-invocation. Aggregate stats only.',
@@ -88,7 +88,7 @@ function emit(ir) {
       const unsupported = matchers.filter(m => !SUPPORTED_PRE_TOOL_MATCHERS.includes(m));
       if (unsupported.length > 0 && matchers.every(m => !SUPPORTED_PRE_TOOL_MATCHERS.includes(m))) {
         result.losses.push(createLoss(PLATFORM_ID, `PreToolUse(${hook.matcher})`, 'hard-limit',
-          'Codex does not expose PreToolUse for file operations. No shim possible.',
+          'Codex does not expose PreToolUse for file operations. No approximation possible.',
           { workaround: 'Mitigate via AGENTS.md instructions.' }));
         continue;
       }
