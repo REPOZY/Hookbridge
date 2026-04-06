@@ -18,7 +18,7 @@ function generateReport(losses, filesByPlatform, meta) {
 
   // Summary table
   lines.push('## Summary');
-  lines.push('| Platform | Files | Shimmed | Hard Limits | Warnings | Errors |');
+  lines.push('| Platform | Files | Approximated | Hard Limits | Warnings | Errors |');
   lines.push('|---|---|---|---|---|---|');
 
   const platforms = Object.keys(filesByPlatform);
@@ -48,7 +48,7 @@ function generateReport(losses, filesByPlatform, meta) {
     }
 
     for (const loss of pLosses) {
-      const label = loss.severity === 'shimmed' ? 'SHIMMED'
+      const label = loss.severity === 'shimmed' ? 'APPROXIMATED'
         : loss.severity === 'hard-limit' ? 'HARD LIMIT'
         : loss.severity === 'error' ? 'ERROR'
         : 'WARN';
@@ -57,7 +57,7 @@ function generateReport(losses, filesByPlatform, meta) {
       lines.push(`**Reason:** ${loss.reason}`);
 
       if (loss.shimMechanism) {
-        lines.push(`**Shim:** ${loss.shimMechanism}`);
+        lines.push(`**Approximation mechanism:** ${loss.shimMechanism}`);
       }
       if (loss.limitations) {
         lines.push(`**Limitation:** ${loss.limitations}`);
