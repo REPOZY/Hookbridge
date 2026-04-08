@@ -89,6 +89,7 @@ function runCompile(args) {
   const allLosses = [];
   const allFiles = new Map();
   const filesByPlatform = {};
+  const fidelityByPlatform = {};
 
   for (const platformId of ir.meta.platforms) {
     const adapter = getAdapter(platformId);
@@ -116,6 +117,8 @@ function runCompile(args) {
         console.log(`  ${platformId.padEnd(12)} +  ${filePath} (shim)`);
       }
 
+      fidelityByPlatform[platformId] = result.fidelity;
+
       allLosses.push(...result.losses);
     } catch (e) {
       console.error(`\nhookbridge: adapter error (${platformId})\n`);
@@ -130,6 +133,25 @@ function runCompile(args) {
     console.error('\nError-level losses detected — nothing written:\n');
     for (const l of errorLosses) console.error(`  [${l.platform}] ERROR: ${l.feature} — ${l.reason}`);
     process.exit(1);
+  }
+
+  // Print fidelity summary
+  console.log('\nFidelity:');
+  for (const [platformId, f] of Object.entries(fidelityByPlatform)) {
+    if (f.total === 0) {
+      console.log(`  ${platformId.padEnd(14)} no hooks targeted`);
+      continue;
+    }
+    if (f.native === f.total) {
+      console.log(`  ${platformId.padEnd(14)} ${f.total}/${f.total} hooks native (100%)`);
+    } else {
+      const fires = f.native + f.shimmed;
+      const pct = Math.round((fires / f.total) * 100);
+      const parts = [`${f.native}/${f.total} native`];
+      if (f.shimmed > 0) parts.push(`${f.shimmed}/${f.total} shimmed`);
+      if (f.hardLimited > 0) parts.push(`${f.hardLimited}/${f.total} lost`);
+      console.log(`  ${platformId.padEnd(14)} ${parts.join(', ')}  (${pct}% fire)`);
+    }
   }
 
   // Write files (unless dry-run)
@@ -148,7 +170,7 @@ function runCompile(args) {
   const report = generateReport(allLosses, filesByPlatform, {
     version: VERSION,
     schema: path.basename(schemaPath),
-  });
+  }, fidelityByPlatform);
   const reportPath = path.join(outDir, 'loss-report.md');
   if (!args.dryRun) {
     fs.writeFileSync(reportPath, report, 'utf8');
