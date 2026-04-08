@@ -63,6 +63,7 @@
  * @property {Map<string, string>} files
  * @property {Map<string, string>} shims
  * @property {Loss[]} losses
+ * @property {{total: number, native: number, shimmed: number, hardLimited: number}} fidelity
  */
 
 function createAdapterResult() {
