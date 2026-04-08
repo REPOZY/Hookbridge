@@ -6,9 +6,10 @@
  * @param {Loss[]} losses
  * @param {Object<string, string[]>} filesByPlatform — { platformId: [filenames] }
  * @param {Object} meta — { version, schema }
+ * @param {Object<string, {total:number, native:number, shimmed:number, hardLimited:number}>} [fidelityByPlatform]
  * @returns {string}
  */
-function generateReport(losses, filesByPlatform, meta) {
+function generateReport(losses, filesByPlatform, meta, fidelityByPlatform = {}) {
   const lines = [];
   lines.push('# Plugin Compiler — Loss Report');
   lines.push(`Generated: ${new Date().toISOString()}`);
@@ -18,8 +19,8 @@ function generateReport(losses, filesByPlatform, meta) {
 
   // Summary table
   lines.push('## Summary');
-  lines.push('| Platform | Files | Approximated | Hard Limits | Warnings | Errors |');
-  lines.push('|---|---|---|---|---|---|');
+  lines.push('| Platform | Files | Fidelity | Approximated | Hard Limits | Warnings | Errors |');
+  lines.push('|---|---|---|---|---|---|---|');
 
   const platforms = Object.keys(filesByPlatform);
   for (const p of platforms) {
@@ -28,7 +29,16 @@ function generateReport(losses, filesByPlatform, meta) {
     const hardLimits = pLosses.filter(l => l.severity === 'hard-limit').length;
     const warns = pLosses.filter(l => l.severity === 'warn').length;
     const errors = pLosses.filter(l => l.severity === 'error').length;
-    lines.push(`| ${p} | ${filesByPlatform[p].length} | ${shimmed} | ${hardLimits} | ${warns} | ${errors} |`);
+
+    const f = fidelityByPlatform[p];
+    let fidelityStr = '—';
+    if (f && f.total > 0) {
+      const fires = f.native + f.shimmed;
+      const pct = Math.round((fires / f.total) * 100);
+      fidelityStr = `${fires}/${f.total} (${pct}%)`;
+    }
+
+    lines.push(`| ${p} | ${filesByPlatform[p].length} | ${fidelityStr} | ${shimmed} | ${hardLimits} | ${warns} | ${errors} |`);
   }
 
   lines.push('');

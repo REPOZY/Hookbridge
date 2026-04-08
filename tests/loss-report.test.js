@@ -57,4 +57,29 @@ const { generateReport } = require('../src/loss-reporter');
   console.log('PASS: clean platform says no losses');
 }
 
+// Test: fidelity column shown in summary table when data provided
+{
+  const losses = [];
+  const files = { 'claude-code': ['hooks.json'], codex: ['codex-hooks.json'] };
+  const fidelity = {
+    'claude-code': { total: 3, native: 3, shimmed: 0, hardLimited: 0 },
+    codex:         { total: 3, native: 1, shimmed: 1, hardLimited: 1 },
+  };
+  const report = generateReport(losses, files, { version: '1.0.0', schema: 'test.yaml' }, fidelity);
+  assert.ok(report.includes('Fidelity'), 'Has Fidelity column header');
+  assert.ok(report.includes('3/3 (100%)'), 'claude-code shows 100%');
+  assert.ok(report.includes('2/3 (67%)'), 'codex shows 67% (1 native + 1 shimmed fires, 1 lost)');
+  console.log('PASS: fidelity column in summary table');
+}
+
+// Test: fidelity column shows — when no fidelity data
+{
+  const losses = [];
+  const files = { 'claude-code': ['hooks.json'] };
+  const report = generateReport(losses, files, { version: '1.0.0', schema: 'test.yaml' });
+  assert.ok(report.includes('Fidelity'), 'Fidelity column header present even without data');
+  assert.ok(report.includes('—'), 'Shows — when no fidelity data');
+  console.log('PASS: fidelity column shows — without data');
+}
+
 console.log('\nAll loss report tests passed.');
