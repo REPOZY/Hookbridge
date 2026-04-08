@@ -66,7 +66,7 @@
  */
 
 function createAdapterResult() {
-  return { files: new Map(), shims: new Map(), losses: [] };
+  return { files: new Map(), shims: new Map(), losses: [], fidelity: { total: 0, native: 0, shimmed: 0, hardLimited: 0 } };
 }
 
 function createLoss(platform, feature, severity, reason, extra = {}) {

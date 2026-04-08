@@ -133,4 +133,16 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: SubagentStart approximated with stop-shim');
 }
 
+// Test: AdapterResult has fidelity shape with zero values before population
+{
+  const { createAdapterResult } = require('../src/ir');
+  const r = createAdapterResult();
+  assert.ok('fidelity' in r, 'fidelity key present');
+  assert.strictEqual(r.fidelity.total, 0, 'total defaults to 0');
+  assert.strictEqual(r.fidelity.native, 0, 'native defaults to 0');
+  assert.strictEqual(r.fidelity.shimmed, 0, 'shimmed defaults to 0');
+  assert.strictEqual(r.fidelity.hardLimited, 0, 'hardLimited defaults to 0');
+  console.log('PASS: AdapterResult has fidelity shape');
+}
+
 console.log('\nAll Codex adapter tests passed.');
