@@ -166,4 +166,31 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: http type does not substitute {PLUGIN_ROOT} in url');
 }
 
+// Test: fidelity — all hooks are native on claude-code
+{
+  const ir = makeIR([
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', platforms: ['claude-code'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['claude-code'] },
+    { event: 'PostToolUse', matcher: 'Edit|Write', command: 'node {PLUGIN_ROOT}/track.js', platforms: ['claude-code'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 3, 'total is 3');
+  assert.strictEqual(result.fidelity.native, 3, 'all 3 native');
+  assert.strictEqual(result.fidelity.shimmed, 0, 'none shimmed');
+  assert.strictEqual(result.fidelity.hardLimited, 0, 'none lost');
+  console.log('PASS: fidelity — all hooks native on claude-code');
+}
+
+// Test: fidelity — hooks targeting only other platforms don't count
+{
+  const ir = makeIR([
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['claude-code'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/codex-stop.js', platforms: ['codex'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 1, 'only 1 hook targets claude-code');
+  assert.strictEqual(result.fidelity.native, 1, '1 native');
+  console.log('PASS: fidelity — cross-platform hooks not double-counted');
+}
+
 console.log('\nAll Claude Code adapter tests passed.');

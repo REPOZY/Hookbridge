@@ -17,6 +17,8 @@ function emit(ir) {
 
   // Filter hooks for this platform
   const myHooks = ir.hooks.filter(h => h.platforms.includes(PLATFORM_ID));
+  result.fidelity.total = myHooks.length;
+  result.fidelity.native = myHooks.length;
 
   // Group by event, preserving declaration order
   const eventGroups = new Map();
