@@ -145,4 +145,61 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: AdapterResult has fidelity shape');
 }
 
+// Test: fidelity — all native hooks
+{
+  const ir = makeIR([
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', platforms: ['codex'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['codex'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 2, 'total is 2');
+  assert.strictEqual(result.fidelity.native, 2, 'both native');
+  assert.strictEqual(result.fidelity.shimmed, 0, 'none shimmed');
+  assert.strictEqual(result.fidelity.hardLimited, 0, 'none lost');
+  console.log('PASS: fidelity counts — all native');
+}
+
+// Test: fidelity — shimmed hooks
+{
+  const ir = makeIR([
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', platforms: ['codex'] },
+    { event: 'SubagentStart', command: 'node {PLUGIN_ROOT}/hooks/subagent-start.js', platforms: ['codex'] },
+    { event: 'SubagentStop', command: 'node {PLUGIN_ROOT}/hooks/subagent-stop.js', platforms: ['codex'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 3, 'total is 3');
+  assert.strictEqual(result.fidelity.native, 1, '1 native');
+  assert.strictEqual(result.fidelity.shimmed, 2, '2 shimmed');
+  assert.strictEqual(result.fidelity.hardLimited, 0, 'none lost');
+  console.log('PASS: fidelity counts — shimmed hooks');
+}
+
+// Test: fidelity — hard-limited hooks
+{
+  const ir = makeIR([
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['codex'] },
+    { event: 'PreToolUse', matcher: 'Read|Edit|Write', command: 'node {PLUGIN_ROOT}/safety.js', platforms: ['codex'] },
+    { event: 'InstructionsLoaded', command: 'node {PLUGIN_ROOT}/inst.js', platforms: ['codex'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 3, 'total is 3');
+  assert.strictEqual(result.fidelity.native, 1, '1 native');
+  assert.strictEqual(result.fidelity.shimmed, 0, 'none shimmed');
+  assert.strictEqual(result.fidelity.hardLimited, 2, '2 lost');
+  console.log('PASS: fidelity counts — hard-limited hooks');
+}
+
+// Test: fidelity — async:true warn does not reduce native count
+{
+  const ir = makeIR([
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', async: true, platforms: ['codex'] },
+  ]);
+  const result = emit(ir);
+  assert.strictEqual(result.fidelity.total, 1, 'total is 1');
+  assert.strictEqual(result.fidelity.native, 1, 'still native despite async warn');
+  assert.strictEqual(result.fidelity.shimmed, 0);
+  assert.strictEqual(result.fidelity.hardLimited, 0);
+  console.log('PASS: fidelity — async:true warn does not reduce native count');
+}
+
 console.log('\nAll Codex adapter tests passed.');

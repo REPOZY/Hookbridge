@@ -19,6 +19,7 @@ function emit(ir) {
   const shimNeeded = { editTracking: false, sessionStats: false, subagentGuard: false, subagentStart: false };
 
   const myHooks = ir.hooks.filter(h => h.platforms.includes(PLATFORM_ID));
+  result.fidelity.total = myHooks.length;
   const nativeHooks = [];
 
   for (const hook of myHooks) {
@@ -30,6 +31,7 @@ function emit(ir) {
     if (hook.type && hook.type !== 'command') {
       result.losses.push(createLoss(PLATFORM_ID, `${hook.event}(type:${hook.type})`, 'hard-limit',
         `Codex only supports "command" hook type. "${hook.type}" hooks have no Codex equivalent.`));
+      result.fidelity.hardLimited++;
       continue;
     }
 
@@ -41,6 +43,7 @@ function emit(ir) {
           shimMechanism: 'Stop-time transcript analysis detects subagent invocations → stop-shim.js',
           limitations: 'Reactive, not preventive. Enforcement happens after the subagent has already run.',
         }));
+      result.fidelity.shimmed++;
       continue;
     }
 
@@ -52,6 +55,7 @@ function emit(ir) {
           shimMechanism: 'Stop-time transcript analysis detects Agent tool invocations → stop-shim.js',
           limitations: 'Reactive, not preventive. Fires at session end, not at subagent spawn time.',
         }));
+      result.fidelity.shimmed++;
       continue;
     }
 
@@ -78,6 +82,7 @@ function emit(ir) {
             }));
         }
         if (matchers.every(m => !SUPPORTED_POST_TOOL_MATCHERS.includes(m))) {
+          result.fidelity.shimmed++;
           continue;
         }
       }
@@ -90,6 +95,7 @@ function emit(ir) {
         result.losses.push(createLoss(PLATFORM_ID, `PreToolUse(${hook.matcher})`, 'hard-limit',
           'Codex does not expose PreToolUse for file operations. No approximation possible.',
           { workaround: 'Mitigate via AGENTS.md instructions.' }));
+        result.fidelity.hardLimited++;
         continue;
       }
     }
@@ -97,11 +103,14 @@ function emit(ir) {
     if (!SUPPORTED_EVENTS.includes(hook.event)) {
       result.losses.push(createLoss(PLATFORM_ID, hook.event, 'hard-limit',
         `${hook.event} is not a documented Codex lifecycle event.`));
+      result.fidelity.hardLimited++;
       continue;
     }
 
     nativeHooks.push(hook);
   }
+
+  result.fidelity.native = nativeHooks.length;
 
   // Build codex-hooks.json (no outer "hooks" wrapper)
   const hooksObj = {};
