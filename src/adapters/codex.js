@@ -1,4 +1,3 @@
-// plugin-compiler/src/adapters/codex.js
 'use strict';
 
 const { createAdapterResult, createLoss } = require('../ir');
@@ -13,8 +12,8 @@ const SUPPORTED_PRE_TOOL_MATCHERS = ['Bash'];
 function emit(ir) {
   const result = createAdapterResult();
   const ext = ir.extensions.codex || {};
-  const installPath = (ext.install_path || '$HOME/.codex/{meta.name}')
-    .replace('{meta.name}', ir.meta.name);
+  const installPath = substituteMeta(ext.install_path || '$HOME/.codex/{meta.name}', ir.meta);
+  const legacyInstallPaths = normalizeLegacyInstallPaths(ext.legacy_install_paths, ir.meta);
 
   const shimNeeded = { editTracking: false, sessionStats: false, subagentGuard: false, subagentStart: false };
 
@@ -112,14 +111,14 @@ function emit(ir) {
 
   result.fidelity.native = nativeHooks.length;
 
-  // Build codex-hooks.json (no outer "hooks" wrapper)
+  // Build codex-hooks.json with the current documented top-level "hooks" wrapper.
   const hooksObj = {};
   for (const hook of nativeHooks) {
     if (!hooksObj[hook.event]) {
       hooksObj[hook.event] = [];
     }
 
-    const resolvedCommand = buildCodexCommand(hook.command, installPath, ir.meta.name);
+    const resolvedCommand = buildCodexCommand(hook.command, installPath, legacyInstallPaths, ir.meta.name);
     const hookEntry = { type: 'command', command: resolvedCommand };
     const group = {};
     if (hook.matcher !== undefined) {
@@ -129,7 +128,6 @@ function emit(ir) {
     hooksObj[hook.event].push(group);
   }
 
-  // Generate stop-shim if any shimmed features needed
   if (shimNeeded.editTracking || shimNeeded.sessionStats || shimNeeded.subagentGuard || shimNeeded.subagentStart) {
     const shimSource = generateStopShim({
       editTracking: shimNeeded.editTracking,
@@ -148,13 +146,12 @@ function emit(ir) {
     result.shims.set('hooks/codex/stop-shim.js', shimSource);
 
     if (!hooksObj.Stop) hooksObj.Stop = [];
-    const shimCommand = buildCodexCommand('node {PLUGIN_ROOT}/hooks/codex/stop-shim.js', installPath, ir.meta.name);
+    const shimCommand = buildCodexCommand('node {PLUGIN_ROOT}/hooks/codex/stop-shim.js', installPath, legacyInstallPaths, ir.meta.name);
     hooksObj.Stop.push({ hooks: [{ type: 'command', command: shimCommand }] });
   }
 
-  result.files.set('hooks/codex-hooks.json', JSON.stringify(hooksObj, null, 2) + '\n');
+  result.files.set('hooks/codex-hooks.json', JSON.stringify({ hooks: hooksObj }, null, 2) + '\n');
 
-  // Build .codex-plugin/plugin.json
   const manifest = {
     name: ir.meta.name,
     version: ir.meta.version,
@@ -165,7 +162,6 @@ function emit(ir) {
     ...(ir.meta.license && { license: ir.meta.license }),
     ...(ir.meta.keywords && { keywords: ir.meta.keywords }),
     skills: './skills/',
-    hooks: './hooks/codex-hooks.json',
     interface: {
       displayName: ext.display_name || ir.meta.name,
       shortDescription: ext.short_description || ext.description || ir.meta.description,
@@ -182,23 +178,54 @@ function emit(ir) {
   return result;
 }
 
-function buildCodexCommand(command, installPath, pluginName) {
-  const resolved = command.replace(/\{PLUGIN_ROOT\}/g, installPath);
-  const altPath = installPath.replace(pluginName, 'superpowers');
-
-  const nodePrefix = 'node ';
-  if (resolved.startsWith(nodePrefix)) {
-    const scriptPath = resolved.slice(nodePrefix.length);
-    const altScriptPath = scriptPath.replace(installPath, altPath);
-    return `if [ -f "${scriptPath}" ]; then node "${scriptPath}"; elif [ -f "${altScriptPath}" ]; then node "${altScriptPath}"; else echo '{}'; fi`;
-  }
-
-  return resolved;
+function substituteMeta(value, meta) {
+  return String(value).replace(/\{meta\.name\}/g, meta.name);
 }
 
-/**
- * Compact JSON arrays of short strings onto single lines.
- */
+function normalizeLegacyInstallPaths(legacyInstallPaths, meta) {
+  if (!Array.isArray(legacyInstallPaths)) return [];
+  return legacyInstallPaths.map(p => substituteMeta(p, meta)).filter(Boolean);
+}
+
+function buildCodexCommand(command, installPath, legacyInstallPaths, pluginName) {
+  const resolved = command.replace(/\{PLUGIN_ROOT\}/g, installPath);
+  const nodePrefix = 'node ';
+  if (!resolved.startsWith(nodePrefix)) {
+    return resolved;
+  }
+
+  const scriptPath = resolved.slice(nodePrefix.length).trim();
+  const relativeScriptPath = deriveRelativeScriptPath(scriptPath, [installPath, ...legacyInstallPaths]);
+  if (!relativeScriptPath) {
+    // Fall back to the simple resolved command if we can't safely recover the plugin-relative path.
+    return resolved;
+  }
+
+  return buildBootstrappedNodeCommand(relativeScriptPath, [installPath, ...legacyInstallPaths], pluginName);
+}
+
+function deriveRelativeScriptPath(scriptPath, candidateRoots) {
+  for (const root of candidateRoots) {
+    const prefix = root.endsWith('/') ? root : `${root}/`;
+    if (scriptPath.startsWith(prefix)) {
+      return scriptPath.slice(prefix.length);
+    }
+  }
+  return null;
+}
+
+function buildBootstrappedNodeCommand(relativeScriptPath, candidateRoots, pluginName) {
+  const uniqueRoots = Array.from(new Set(candidateRoots.filter(Boolean)));
+  const shellRoots = uniqueRoots.map(root => `"${escapeForDoubleQuotes(root)}"`).join(' ');
+  const adapter = escapeForDoubleQuotes(relativeScriptPath);
+
+  return `bash -lc 'adapter="${adapter}"; if ! command -v node >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh"; fi; if ! command -v node >/dev/null 2>&1; then echo "{}"; exit 0; fi; plugin_root=""; for dir in ${shellRoots}; do if [ -f "$dir/$adapter" ]; then plugin_root="$dir"; break; fi; done; if [ -z "$plugin_root" ] && [ -L "$HOME/.codex/hooks.json" ]; then hooks_target=$(readlink "$HOME/.codex/hooks.json" 2>/dev/null || printf ""); if [ -n "$hooks_target" ]; then candidate=$(dirname "$(dirname "$hooks_target")"); if [ -f "$candidate/$adapter" ]; then plugin_root="$candidate"; fi; fi; fi; if [ -z "$plugin_root" ] && [ -d "$HOME/.codex/plugins/cache" ]; then adapter_path=$(find "$HOME/.codex/plugins/cache" -path "*/$adapter" -print -quit 2>/dev/null); if [ -n "$adapter_path" ]; then plugin_root=$(dirname "$(dirname "$(dirname "$adapter_path")")"); fi; fi; if [ -n "$plugin_root" ]; then node "$plugin_root/$adapter"; else echo "{}"; fi'`;
+}
+
+function escapeForDoubleQuotes(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
 function compactShortArrays(json) {
   return json.replace(/\[\n(\s+"[^"]{1,40}",?\n)+\s+\]/g, (match) => {
     const items = match.match(/"[^"]+"/g);
