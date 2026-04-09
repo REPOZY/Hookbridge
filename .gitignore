@@ -6,6 +6,7 @@ loss-report.md
 output/
 todo
 docs/
+*.txt
 
 # AI assistant artifacts
 project-map.md
