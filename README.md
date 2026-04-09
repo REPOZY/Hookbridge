@@ -246,6 +246,7 @@ extensions:
 
   codex:
     install_path: "$HOME/.codex/{meta.name}"
+    legacy_install_paths: ["$HOME/.codex/old-plugin-name"]   # Optional — extra install roots to probe before giving up
     description: "Codex description"
     display_name: "My Plugin"       # Optional — human-readable name shown in Codex UI
                                     # Defaults to meta.name if omitted
@@ -269,7 +270,7 @@ The `type` field controls how Claude Code dispatches the hook. Codex supports `c
 Use `{PLUGIN_ROOT}` in every hook command instead of a hardcoded path. Hookbridge replaces it with the correct platform-specific path resolution:
 
 - Claude Code: `"${MY_PLUGIN_ROOT}/hooks/start.js"` (environment variable)
-- Codex: `if [ -f "$HOME/.codex/my-plugin/hooks/start.js" ]; then ...` (install path with fallback)
+- Codex: `bash -lc 'adapter="hooks/start.js"; ...'` (loads Node when needed, resolves the installed clone, optional legacy install paths, the `~/.codex/hooks.json` symlink target, and plugin cache before running the script)
 
 ### Supported hook events
 
