@@ -50,7 +50,7 @@ function generateReport(losses, filesByPlatform, meta, fidelityByPlatform = {}) 
     lines.push(`## ${p}`);
     const pLosses = losses.filter(l => l.platform === p);
     if (pLosses.length === 0) {
-      lines.push('No losses. All features fully supported natively.');
+      lines.push('No compiler losses among hooks targeted to this platform. All targeted hooks compiled natively.');
       lines.push('');
       lines.push('---');
       lines.push('');
