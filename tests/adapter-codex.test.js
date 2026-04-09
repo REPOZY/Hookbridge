@@ -1,10 +1,9 @@
-// plugin-compiler/tests/adapter-codex.test.js
 'use strict';
 
 const assert = require('assert');
 const { emit } = require('../src/adapters/codex');
 
-function makeIR(hooks = [], extensions = {}) {
+function makeIR(hooks = [], codexExtension = {}) {
   return {
     meta: { name: 'test-plugin', version: '1.0.0', description: 'Test', platforms: ['codex'] },
     hooks,
@@ -15,40 +14,58 @@ function makeIR(hooks = [], extensions = {}) {
         concurrent_hooks: true,
         hooks_require_flag: 'features.codex_hooks = true',
         windows_hooks_supported: false,
+        ...codexExtension,
       },
-      ...extensions,
     },
   };
 }
 
-// Test: {PLUGIN_ROOT} → $HOME/.codex/{meta.name} with if-guard
+// Test: {PLUGIN_ROOT} → bootstrapped bash wrapper with top-level hooks wrapper
 {
   const ir = makeIR([
-    { event: 'UserPromptSubmit', command: 'node {PLUGIN_ROOT}/skill-activator.js', platforms: ['codex'] },
+    { event: 'UserPromptSubmit', command: 'node {PLUGIN_ROOT}/hooks/codex/user-prompt-submit-adapter.js', platforms: ['codex'] },
   ]);
   const result = emit(ir);
   const raw = result.files.get('hooks/codex-hooks.json');
-  assert.ok(raw.includes('$HOME/.codex/test-plugin'), `Expected install path, got: ${raw}`);
-  assert.ok(raw.includes('if [ -f'), 'Expected if-guard');
-  console.log('PASS: {PLUGIN_ROOT} substituted with install path guard');
+  const output = JSON.parse(raw);
+  const command = output.hooks.UserPromptSubmit[0].hooks[0].command;
+  assert.ok(raw.includes('"hooks": {'), 'Expected top-level hooks wrapper');
+  assert.ok(command.startsWith("bash -lc 'adapter=\"hooks/codex/user-prompt-submit-adapter.js\""), `Expected bash wrapper, got: ${command}`);
+  assert.ok(command.includes('.nvm/nvm.sh'), 'Expected nvm bootstrap');
+  assert.ok(command.includes('$HOME/.codex/test-plugin'), 'Expected install path');
+  assert.ok(command.includes('$HOME/.codex/plugins/cache'), 'Expected plugin cache lookup');
+  console.log('PASS: node command wrapped with current Codex bootstrap');
 }
 
-// Test: no outer "hooks" wrapper (Codex format)
+// Test: legacy_install_paths are included when configured
+{
+  const ir = makeIR(
+    [{ event: 'Stop', command: 'node {PLUGIN_ROOT}/hooks/codex/stop-adapter.js', platforms: ['codex'] }],
+    { legacy_install_paths: ['$HOME/.codex/old-plugin'] }
+  );
+  const result = emit(ir);
+  const output = JSON.parse(result.files.get('hooks/codex-hooks.json'));
+  const command = output.hooks.Stop[0].hooks[0].command;
+  assert.ok(command.includes('$HOME/.codex/old-plugin'), 'Expected configured legacy install path');
+  console.log('PASS: legacy install paths included');
+}
+
+// Test: top-level "hooks" wrapper (current Codex format)
 {
   const ir = makeIR([
-    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['codex'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/hooks/codex/stop-adapter.js', platforms: ['codex'] },
   ]);
   const result = emit(ir);
   const output = JSON.parse(result.files.get('hooks/codex-hooks.json'));
-  assert.ok(output.Stop, 'Stop key exists at root');
-  assert.strictEqual(output.hooks, undefined, 'No outer hooks wrapper');
-  console.log('PASS: no outer hooks wrapper');
+  assert.ok(output.hooks.Stop, 'Stop key exists under hooks');
+  assert.strictEqual(output.Stop, undefined, 'No root-level Stop key');
+  console.log('PASS: top-level hooks wrapper emitted');
 }
 
 // Test: async: true → warn loss
 {
   const ir = makeIR([
-    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', async: true, platforms: ['codex'] },
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/hooks/codex/session-start-adapter.js', async: true, platforms: ['codex'] },
   ]);
   const result = emit(ir);
   assert.ok(result.losses.some(l => l.severity === 'warn' && l.feature.includes('async')), 'async produces warn');
@@ -58,11 +75,11 @@ function makeIR(hooks = [], extensions = {}) {
 // Test: PostToolUse(Edit|Write) → approximated loss, hook NOT emitted natively
 {
   const ir = makeIR([
-    { event: 'PostToolUse', matcher: 'Edit|Write', command: 'node {PLUGIN_ROOT}/track.js', platforms: ['codex'] },
+    { event: 'PostToolUse', matcher: 'Edit|Write', command: 'node {PLUGIN_ROOT}/hooks/track.js', platforms: ['codex'] },
   ]);
   const result = emit(ir);
   const output = JSON.parse(result.files.get('hooks/codex-hooks.json'));
-  const postToolEntries = output.PostToolUse || [];
+  const postToolEntries = output.hooks.PostToolUse || [];
   const hasEditWrite = postToolEntries.some(e => e.matcher === 'Edit|Write');
   assert.strictEqual(hasEditWrite, false, 'Edit|Write not emitted natively');
   assert.ok(result.losses.some(l => l.severity === 'shimmed' && l.feature.includes('Edit|Write')), 'approximated loss emitted');
@@ -90,7 +107,7 @@ function makeIR(hooks = [], extensions = {}) {
   console.log('PASS: PreToolUse(Read|Edit|Write) produces hard-limit');
 }
 
-// Test: .codex-plugin/plugin.json manifest generated with skills and hooks fields
+// Test: .codex-plugin/plugin.json manifest generated without hooks field
 {
   const ir = makeIR([]);
   const result = emit(ir);
@@ -98,8 +115,8 @@ function makeIR(hooks = [], extensions = {}) {
   const manifest = JSON.parse(result.files.get('.codex-plugin/plugin.json'));
   assert.strictEqual(manifest.name, 'test-plugin');
   assert.strictEqual(manifest.skills, './skills/');
-  assert.strictEqual(manifest.hooks, './hooks/codex-hooks.json');
-  console.log('PASS: codex plugin.json generated with skills and hooks');
+  assert.strictEqual(manifest.hooks, undefined, 'No hooks field in current Codex manifest');
+  console.log('PASS: codex plugin.json generated without hooks field');
 }
 
 // Test: non-command type hook targeting codex → hard-limit loss, not emitted
@@ -109,7 +126,7 @@ function makeIR(hooks = [], extensions = {}) {
   ]);
   const result = emit(ir);
   const output = JSON.parse(result.files.get('hooks/codex-hooks.json'));
-  assert.strictEqual(output.Stop, undefined, 'http type hook not emitted on Codex');
+  assert.strictEqual(output.hooks.Stop, undefined, 'http type hook not emitted on Codex');
   assert.ok(
     result.losses.some(l => l.severity === 'hard-limit' && l.feature.includes('http')),
     'hard-limit loss emitted for http type'
@@ -148,8 +165,8 @@ function makeIR(hooks = [], extensions = {}) {
 // Test: fidelity — all native hooks
 {
   const ir = makeIR([
-    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', platforms: ['codex'] },
-    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['codex'] },
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/hooks/codex/session-start-adapter.js', platforms: ['codex'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/hooks/codex/stop-adapter.js', platforms: ['codex'] },
   ]);
   const result = emit(ir);
   assert.strictEqual(result.fidelity.total, 2, 'total is 2');
@@ -162,7 +179,7 @@ function makeIR(hooks = [], extensions = {}) {
 // Test: fidelity — shimmed hooks
 {
   const ir = makeIR([
-    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', platforms: ['codex'] },
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/hooks/codex/session-start-adapter.js', platforms: ['codex'] },
     { event: 'SubagentStart', command: 'node {PLUGIN_ROOT}/hooks/subagent-start.js', platforms: ['codex'] },
     { event: 'SubagentStop', command: 'node {PLUGIN_ROOT}/hooks/subagent-stop.js', platforms: ['codex'] },
   ]);
@@ -177,7 +194,7 @@ function makeIR(hooks = [], extensions = {}) {
 // Test: fidelity — hard-limited hooks
 {
   const ir = makeIR([
-    { event: 'Stop', command: 'node {PLUGIN_ROOT}/stop.js', platforms: ['codex'] },
+    { event: 'Stop', command: 'node {PLUGIN_ROOT}/hooks/codex/stop-adapter.js', platforms: ['codex'] },
     { event: 'PreToolUse', matcher: 'Read|Edit|Write', command: 'node {PLUGIN_ROOT}/safety.js', platforms: ['codex'] },
     { event: 'InstructionsLoaded', command: 'node {PLUGIN_ROOT}/inst.js', platforms: ['codex'] },
   ]);
@@ -192,7 +209,7 @@ function makeIR(hooks = [], extensions = {}) {
 // Test: fidelity — async:true warn does not reduce native count
 {
   const ir = makeIR([
-    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/start.js', async: true, platforms: ['codex'] },
+    { event: 'SessionStart', command: 'node {PLUGIN_ROOT}/hooks/codex/session-start-adapter.js', async: true, platforms: ['codex'] },
   ]);
   const result = emit(ir);
   assert.strictEqual(result.fidelity.total, 1, 'total is 1');
