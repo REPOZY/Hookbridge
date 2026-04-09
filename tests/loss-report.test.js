@@ -53,7 +53,7 @@ const { generateReport } = require('../src/loss-reporter');
   const losses = [];
   const files = { 'claude-code': ['hooks.json'] };
   const report = generateReport(losses, files, { version: '0.1.0', schema: 'test.yaml' });
-  assert.ok(report.includes('No losses'), 'Reports no losses for clean platform');
+  assert.ok(report.includes('No compiler losses among hooks targeted to this platform.'), 'Reports scoped no-loss wording for clean platform');
   console.log('PASS: clean platform says no losses');
 }
 
